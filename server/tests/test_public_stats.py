@@ -6,7 +6,7 @@ def _login(client: TestClient) -> None:
     assert response.status_code == 200
 
 
-def _seed_practice_data(client: TestClient) -> None:
+def _seed_practice_data(client: TestClient) -> str:
     _login(client)
     start_response = client.post("/api/sessions/start", json={})
     assert start_response.status_code == 201
@@ -28,6 +28,7 @@ def _seed_practice_data(client: TestClient) -> None:
         json={"ball_count": 21, "mode": "standalone"},
     )
     assert standalone_response.status_code == 201
+    return session_id
 
 
 def test_public_endpoints_do_not_require_auth(session_client):
@@ -80,3 +81,28 @@ def test_public_endpoints_are_read_only(session_client):
     response = session_client.post("/api/public/overview", json={})
 
     assert response.status_code == 405
+
+
+def test_public_session_detail_returns_session_games_and_buckets(session_client):
+    session_id = _seed_practice_data(session_client)
+
+    response = session_client.get(f"/api/public/sessions/{session_id}")
+    detail = response.json()
+
+    assert response.status_code == 200
+    assert detail["session"]["id"] == session_id
+    assert detail["session"]["ball_count"] == 10
+    assert detail["session"]["bucket_count"] == 1
+    assert detail["source_totals"]["target_completion"] == 10
+    assert detail["buckets"][0]["ball_count"] == 10
+    assert detail["games"][0]["score"] == 10
+    assert detail["games"][0]["completed_target_count"] == 9
+    assert detail["games"][0]["targets"][0]["attempts"] == 2
+    assert detail["provenance"]["design_version"] == "v0-manual-tracker"
+    assert detail["provenance"]["app_git_sha"] is None
+
+
+def test_public_session_detail_returns_404_for_missing_session(session_client):
+    response = session_client.get("/api/public/sessions/not-a-session")
+
+    assert response.status_code == 404

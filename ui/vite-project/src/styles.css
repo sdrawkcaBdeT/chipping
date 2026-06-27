@@ -1,9 +1,23 @@
 :root {
-  color: #172018;
-  background: #f5f7f2;
-  font-family:
-    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+  --font-body: "din-2014", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
     sans-serif;
+  --font-display: "expressway", "din-2014", ui-sans-serif, system-ui, sans-serif;
+  --font-numeric: "expressway", "din-2014", ui-sans-serif, system-ui, sans-serif;
+  --ink: #151a17;
+  --muted-ink: #59625c;
+  --paper: #f4f3ec;
+  --panel: #fffefa;
+  --field: #e8ebdf;
+  --pine: #133f35;
+  --moss: #678b52;
+  --steel: #31505b;
+  --signal: #d6b246;
+  --clay: #9b3f32;
+  --line: rgba(21, 26, 23, 0.13);
+  --shadow: 0 22px 70px rgba(22, 31, 24, 0.11);
+  color: var(--ink);
+  background: var(--paper);
+  font-family: var(--font-body);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
 }
@@ -17,9 +31,9 @@ body {
   min-width: 320px;
   min-height: 100vh;
   background:
-    linear-gradient(135deg, rgba(78, 126, 71, 0.14), transparent 42%),
-    linear-gradient(315deg, rgba(31, 85, 94, 0.13), transparent 46%),
-    #f5f7f2;
+    linear-gradient(180deg, rgba(214, 178, 70, 0.11), transparent 280px),
+    linear-gradient(135deg, rgba(49, 80, 91, 0.11), transparent 420px),
+    var(--paper);
 }
 
 a {
@@ -27,7 +41,7 @@ a {
 }
 
 .shell {
-  width: min(100%, 1040px);
+  width: min(100%, 1160px);
   min-height: 100vh;
   margin: 0 auto;
   padding: 24px 18px 40px;
@@ -862,6 +876,453 @@ button:disabled {
   color: #8a2525;
 }
 
+.dashboardShell {
+  padding-top: 18px;
+}
+
+.siteTopbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 22px;
+}
+
+.brandMark {
+  display: inline-grid;
+  gap: 0;
+  color: var(--ink);
+  font-family: var(--font-display);
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.brandMark span {
+  color: var(--muted-ink);
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.brandMark strong {
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.siteNav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.siteNav a:not(.primaryAction) {
+  color: var(--muted-ink);
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.dashboardHero,
+.sessionHero {
+  display: grid;
+  gap: 22px;
+  margin-bottom: 18px;
+  padding: 24px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(19, 63, 53, 0.08), transparent 48%),
+    var(--panel);
+  box-shadow: var(--shadow);
+}
+
+.heroCopy {
+  max-width: 720px;
+}
+
+.heroCopy h1,
+.sessionHero h1 {
+  max-width: 12ch;
+  margin-bottom: 14px;
+  font-family: var(--font-display);
+  font-size: clamp(3rem, 13vw, 7.4rem);
+  font-weight: 800;
+  line-height: 0.86;
+  text-transform: uppercase;
+}
+
+.sessionHero h1 {
+  max-width: 13ch;
+  font-size: clamp(2.4rem, 10vw, 5.6rem);
+}
+
+.heroCopy p,
+.sessionHero p {
+  max-width: 620px;
+  margin: 0;
+  color: var(--muted-ink);
+  font-size: 1.06rem;
+}
+
+.heroScoreboard,
+.sessionHeroStats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.dashboardPanels,
+.sessionDetailGrid {
+  display: grid;
+  gap: 18px;
+}
+
+.dataPanel,
+.sessionShowcase {
+  display: grid;
+  gap: 16px;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 254, 250, 0.86);
+}
+
+.panelHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.panelHeader h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.55rem, 6vw, 2.7rem);
+  font-weight: 800;
+  line-height: 0.92;
+  text-transform: uppercase;
+}
+
+.panelHeader > span {
+  display: inline-flex;
+  min-height: 30px;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0 10px;
+  background: rgba(49, 80, 91, 0.1);
+  color: var(--steel);
+  font-family: var(--font-display);
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.statCard {
+  border-color: var(--line);
+}
+
+.statCard span,
+.statCard small,
+.sourceTotals span,
+.scoreLine span {
+  color: var(--muted-ink);
+}
+
+.statCard strong,
+.scoreLine strong,
+.sourceTotals strong {
+  font-family: var(--font-numeric);
+}
+
+.volumeBars {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 8px;
+  min-height: 220px;
+  align-items: end;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f8f7ef;
+}
+
+.volumeBarColumn {
+  display: grid;
+  grid-template-rows: 26px 1fr 22px;
+  gap: 6px;
+  min-width: 0;
+  height: 100%;
+  align-items: end;
+  justify-items: center;
+}
+
+.volumeBarValue,
+.volumeBarLabel {
+  color: var(--muted-ink);
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.volumeBarTrack {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 150px;
+  overflow: hidden;
+  border-radius: 6px;
+  background: rgba(21, 26, 23, 0.07);
+}
+
+.volumeBarFill {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: var(--barHeight);
+  border-radius: inherit;
+  background: linear-gradient(180deg, var(--signal), var(--moss));
+}
+
+.scoreTrend {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.scoreTrend li {
+  display: grid;
+  gap: 4px;
+  min-height: 104px;
+  align-content: center;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f8f7ef;
+}
+
+.scoreTrend li.best {
+  border-color: rgba(214, 178, 70, 0.58);
+  background: #fbf2d1;
+}
+
+.scoreTrend span,
+.scoreTrend small {
+  color: var(--muted-ink);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.scoreTrend strong {
+  font-family: var(--font-numeric);
+  font-size: 2.2rem;
+  line-height: 1;
+}
+
+.heroScore strong {
+  font-size: clamp(3rem, 16vw, 6rem);
+  line-height: 0.86;
+}
+
+.targetMap,
+.sessionTargetMap {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.targetMap li,
+.sessionTargetMap li {
+  display: grid;
+  min-height: 92px;
+  align-content: center;
+  justify-items: center;
+  gap: 4px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f8f7ef;
+}
+
+.targetMap li.hard {
+  border-color: rgba(155, 63, 50, 0.28);
+  background: #f7ddd4;
+}
+
+.targetMap li.sharp,
+.sessionTargetMap li.completed {
+  border-color: rgba(103, 139, 82, 0.34);
+  background: #dfead5;
+}
+
+.targetMap li.noData {
+  opacity: 0.72;
+}
+
+.targetMap strong,
+.sessionTargetMap strong {
+  font-family: var(--font-numeric);
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.targetMap span,
+.sessionTargetMap span {
+  color: var(--muted-ink);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.sessionShowcase {
+  margin-top: 18px;
+}
+
+.sessionCardGrid {
+  display: grid;
+  gap: 10px;
+}
+
+.sessionCardLink {
+  display: flex;
+  min-height: 76px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 14px;
+  background: var(--panel);
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.sessionCardLink span {
+  display: grid;
+  gap: 4px;
+}
+
+.sessionCardLink strong {
+  font-family: var(--font-display);
+  font-size: 1.08rem;
+}
+
+.sessionCardLink small {
+  color: var(--muted-ink);
+  font-size: 0.9rem;
+}
+
+.bucketTimeline {
+  display: grid;
+  gap: 8px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.bucketTimeline li {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  min-height: 62px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f8f7ef;
+}
+
+.bucketTimeline > li > span {
+  display: grid;
+  width: 34px;
+  aspect-ratio: 1;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--pine);
+  color: #ffffff;
+  font-family: var(--font-display);
+  font-weight: 800;
+}
+
+.bucketTimeline div {
+  display: grid;
+  gap: 3px;
+}
+
+.bucketTimeline small,
+.sessionGameCard small {
+  color: var(--muted-ink);
+}
+
+.sessionGameStack {
+  display: grid;
+  gap: 12px;
+}
+
+.sessionGameCard {
+  display: grid;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f8f7ef;
+}
+
+.sessionGameHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.sessionGameHeader div {
+  display: grid;
+  gap: 4px;
+}
+
+.sessionGameHeader > span {
+  color: var(--pine);
+  font-family: var(--font-numeric);
+  font-size: 1.5rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.provenanceReadout {
+  display: grid;
+  gap: 10px;
+}
+
+.provenanceReadout div {
+  display: grid;
+  gap: 4px;
+  min-height: 70px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f8f7ef;
+}
+
+.provenanceReadout span {
+  color: var(--muted-ink);
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.provenanceReadout strong {
+  overflow-wrap: anywhere;
+  font-family: var(--font-display);
+  font-size: 1.08rem;
+}
+
 .toastStack {
   position: fixed;
   right: max(16px, calc((100vw - 1040px) / 2 + 16px));
@@ -893,6 +1354,54 @@ button:disabled {
 @media (min-width: 760px) {
   .shell {
     padding: 40px 28px 56px;
+  }
+
+  .dashboardShell {
+    padding-top: 24px;
+  }
+
+  .dashboardHero,
+  .sessionHero {
+    grid-template-columns: minmax(0, 1fr) minmax(360px, 460px);
+    align-items: end;
+    padding: 34px;
+  }
+
+  .heroScoreboard,
+  .sessionHeroStats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dashboardPanels {
+    grid-template-columns: minmax(0, 1.1fr) minmax(300px, 0.9fr);
+  }
+
+  .volumePanel {
+    grid-row: span 2;
+  }
+
+  .targetPanel {
+    grid-column: 2;
+  }
+
+  .volumeBars {
+    grid-template-columns: repeat(14, minmax(0, 1fr));
+  }
+
+  .scoreTrend {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+
+  .sessionCardGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .sessionDetailGrid {
+    grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
+  }
+
+  .sessionBucketsPanel {
+    grid-row: span 2;
   }
 
   .panel {

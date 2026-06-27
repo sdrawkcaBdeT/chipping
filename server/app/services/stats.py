@@ -319,6 +319,105 @@ def build_summary(data: dict[str, list[Any]]) -> dict[str, Any]:
     }
 
 
+def build_session_detail(data: dict[str, list[Any]], session_id: str) -> dict[str, Any] | None:
+    sessions: list[PracticeSession] = data["sessions"]
+    buckets: list[PracticeBucket] = data["buckets"]
+    games: list[GameRun] = data["games"]
+    targets: list[TargetCompletionTarget] = data["targets"]
+
+    session = next((item for item in sessions if item.id == session_id), None)
+    if session is None:
+        return None
+
+    session_buckets = [
+        bucket
+        for bucket in buckets
+        if bucket.session_id == session.id
+    ]
+    session_games = [
+        game
+        for game in games
+        if game.session_id == session.id
+    ]
+
+    buckets_by_game: dict[str, list[PracticeBucket]] = defaultdict(list)
+    targets_by_game: dict[str, list[TargetCompletionTarget]] = defaultdict(list)
+    for bucket in session_buckets:
+        if bucket.game_run_id:
+            buckets_by_game[bucket.game_run_id].append(bucket)
+    for target in targets:
+        targets_by_game[target.game_run_id].append(target)
+
+    source_totals: dict[str, int] = defaultdict(int)
+    for bucket in session_buckets:
+        source_totals[bucket.source] += bucket.ball_count
+
+    games_payload = []
+    for game in sorted(session_games, key=lambda item: _datetime_key(item.started_at)):
+        game_targets = sorted(targets_by_game[game.id], key=lambda target: target.order_index)
+        score = sum(target.attempts for target in game_targets)
+        games_payload.append(
+            {
+                "id": game.id,
+                "game_type": game.game_type,
+                "variant": game.variant,
+                "status": game.status,
+                "started_at": _iso(game.started_at),
+                "ended_at": _iso(game.ended_at),
+                "duration_seconds": _duration_seconds(game.started_at, game.ended_at),
+                "score": score,
+                "completed_target_count": sum(1 for target in game_targets if target.hit),
+                "target_order": game.target_order,
+                "bucket_count": len(buckets_by_game[game.id]),
+                "targets": [
+                    {
+                        "target_number": target.target_number,
+                        "order_index": target.order_index,
+                        "attempts": target.attempts,
+                        "hit": target.hit,
+                        "completed_at": _iso(target.completed_at),
+                    }
+                    for target in game_targets
+                ],
+            }
+        )
+
+    return {
+        "session": {
+            "id": session.id,
+            "started_at": _iso(session.started_at),
+            "ended_at": _iso(session.ended_at),
+            "status": session.status,
+            "duration_seconds": _duration_seconds(session.started_at, session.ended_at),
+            "ball_count": sum(bucket.ball_count for bucket in session_buckets),
+            "bucket_count": len(session_buckets),
+            "game_count": len(session_games),
+            "default_club": session.default_club,
+            "default_distance_ft": session.default_distance_ft,
+        },
+        "buckets": [
+            {
+                "id": bucket.id,
+                "game_run_id": bucket.game_run_id,
+                "ball_count": bucket.ball_count,
+                "club": bucket.club,
+                "distance_ft": bucket.distance_ft,
+                "source": bucket.source,
+                "status": bucket.status,
+                "started_at": _iso(bucket.started_at),
+                "ended_at": _iso(bucket.ended_at),
+            }
+            for bucket in sorted(session_buckets, key=lambda item: _datetime_key(item.started_at))
+        ],
+        "games": games_payload,
+        "source_totals": dict(sorted(source_totals.items())),
+        "provenance": {
+            "design_version": "v0-manual-tracker",
+            "app_git_sha": None,
+        },
+    }
+
+
 def build_export_payload(data: dict[str, list[Any]], summary: dict[str, Any]) -> dict[str, Any]:
     return {
         "exported_at": datetime.now(timezone.utc).isoformat(),

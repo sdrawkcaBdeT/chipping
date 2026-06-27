@@ -156,6 +156,116 @@ function EmptyState({ children }) {
   return <p className="emptyState">{children}</p>;
 }
 
+function formatMonthDay(value) {
+  if (!value) {
+    return "";
+  }
+
+  return new Intl.DateTimeFormat(undefined, {
+    month: "short",
+    day: "numeric"
+  }).format(new Date(value));
+}
+
+function sessionTitle(session) {
+  if (!session) {
+    return "Session";
+  }
+
+  return formatDateTime(session.started_at);
+}
+
+function getSessionIdFromPath(pathname) {
+  const match = pathname.match(/^\/sessions\/([^/]+)$/);
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
+function VolumeBars({ days = [] }) {
+  const visibleDays = days.slice(0, 14).reverse();
+  const maxBalls = Math.max(...visibleDays.map((day) => day.balls), 1);
+
+  if (!visibleDays.length) {
+    return <EmptyState>No volume chart yet.</EmptyState>;
+  }
+
+  return (
+    <div className="volumeBars" aria-label="Recent practice volume">
+      {visibleDays.map((day) => {
+        const height = Math.max(8, Math.round((day.balls / maxBalls) * 100));
+        return (
+          <div className="volumeBarColumn" key={day.date}>
+            <span className="volumeBarValue">{formatNumber(day.balls)}</span>
+            <span className="volumeBarTrack">
+              <span className="volumeBarFill" style={{ "--barHeight": `${height}%` }} />
+            </span>
+            <span className="volumeBarLabel">{formatMonthDay(day.date)}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function CompletionTrend({ runs = [] }) {
+  const visibleRuns = runs.slice(0, 6).reverse();
+  const bestScore = Math.min(...visibleRuns.map((run) => run.score), Infinity);
+
+  if (!visibleRuns.length) {
+    return <EmptyState>No completion trend yet.</EmptyState>;
+  }
+
+  return (
+    <ol className="scoreTrend" aria-label="Recent Target Completion scores">
+      {visibleRuns.map((run) => (
+        <li className={run.score === bestScore ? "best" : ""} key={run.id}>
+          <span>{formatMonthDay(run.ended_at || run.started_at)}</span>
+          <strong>{run.score}</strong>
+          <small>{run.variant}</small>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+function TargetMap({ targets = [] }) {
+  const targetRows = targets.length
+    ? targets
+    : Array.from({ length: 9 }, (_, index) => ({
+        target_number: index + 1,
+        average_balls_to_hit: null,
+        attempts: 0
+      }));
+
+  return (
+    <ol className="targetMap" aria-label="Target difficulty map">
+      {targetRows.map((target) => (
+        <li
+          className={targetDifficultyClass(target)}
+          key={target.target_number}
+          title={`Target ${target.target_number}`}
+        >
+          <strong>{target.target_number}</strong>
+          <span>{formatMaybeNumber(target.average_balls_to_hit)}</span>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+function SessionCard({ session }) {
+  return (
+    <a className="sessionCardLink" href={`/sessions/${session.id}`}>
+      <span>
+        <strong>{sessionTitle(session)}</strong>
+        <small>
+          {formatNumber(session.ball_count)} balls / {formatDurationSeconds(session.duration_seconds)}
+        </small>
+      </span>
+      <SessionStatusPill status={session.status} />
+    </a>
+  );
+}
+
 function ObserverDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -209,28 +319,37 @@ function ObserverDashboard() {
   const sourceTotals = Object.entries(volume?.source_totals || {});
 
   return (
-    <main className="shell">
-      <header className="topbar">
-        <div>
-          <p className="eyebrow">Observer Mode</p>
-          <h1>Chip Tracker</h1>
-        </div>
-        <a className="primaryAction" href="/me/login">
-          Log Practice
+    <main className="shell dashboardShell">
+      <header className="siteTopbar">
+        <a className="brandMark" href="/">
+          <span>Chip</span>
+          <strong>Tracker</strong>
         </a>
+        <div className="siteNav">
+          <a href="#sessions">Sessions</a>
+          <a href="#targets">Targets</a>
+          <a className="primaryAction" href="/me/login">
+            Log Practice
+          </a>
+        </div>
       </header>
 
       {loading ? <p className="muted">Loading...</p> : null}
       {error ? <p className="pageError">{error}</p> : null}
 
       {overview ? (
-        <section className="observerGrid">
-          <div className="observerHero">
-            <div>
-              <p className="eyebrow">Read-only dashboard</p>
-              <h2>{formatNumber(overview.total_balls)} balls tracked</h2>
+        <>
+          <section className="dashboardHero">
+            <div className="heroCopy">
+              <p className="eyebrow">Public training dashboard</p>
+              <h1>{formatNumber(overview.total_balls)} balls tracked</h1>
+              <p>
+                Indoor chipping practice at {overview.practice_days} practice{" "}
+                {overview.practice_days === 1 ? "day" : "days"} and{" "}
+                {formatNumber(overview.completed_target_completion_runs)} completed 1-9 runs.
+              </p>
             </div>
-            <div className="statGrid">
+            <div className="heroScoreboard">
               <StatCard
                 label="Last 7 days"
                 value={`${formatNumber(overview.balls_last_7_days)} balls`}
@@ -252,121 +371,283 @@ function ObserverDashboard() {
                 detail="balls"
               />
             </div>
-          </div>
+          </section>
 
-          <div className="readoutPanel">
-            <div className="historyHeader">
-              <p className="eyebrow">Volume</p>
-            </div>
-            <div className="sourceTotals">
-              {sourceTotals.map(([source, total]) => (
-                <div key={source}>
-                  <span>{sourceLabel(source)}</span>
-                  <strong>{formatNumber(total)}</strong>
+          <section className="dashboardPanels">
+            <article className="dataPanel volumePanel">
+              <div className="panelHeader">
+                <div>
+                  <p className="eyebrow">Volume</p>
+                  <h2>Recent work</h2>
                 </div>
-              ))}
-            </div>
-            {!sourceTotals.length ? <EmptyState>No logged volume yet.</EmptyState> : null}
-            <div className="miniMetricRow">
-              <span>{formatNumber(volume?.balls_last_30_days)} balls / 30 days</span>
-              <span>{formatMaybeNumber(volume?.average_balls_per_practice_day)} avg / day</span>
-            </div>
-            <ol className="compactList">
-              {(volume?.daily || []).slice(0, 5).map((day) => (
-                <li key={day.date}>
-                  <strong>{formatDateOnly(day.date)}</strong>
-                  <span>{formatNumber(day.balls)} balls</span>
-                </li>
-              ))}
-            </ol>
-            {volume?.daily?.length ? null : <EmptyState>No practice days yet.</EmptyState>}
-          </div>
+                <span>{formatNumber(volume?.balls_last_30_days)} / 30d</span>
+              </div>
+              <VolumeBars days={volume?.daily || []} />
+              <div className="sourceTotals">
+                {sourceTotals.map(([source, total]) => (
+                  <div key={source}>
+                    <span>{sourceLabel(source)}</span>
+                    <strong>{formatNumber(total)}</strong>
+                  </div>
+                ))}
+              </div>
+              {!sourceTotals.length ? <EmptyState>No logged volume yet.</EmptyState> : null}
+            </article>
 
-          <div className="readoutPanel">
-            <div className="historyHeader">
-              <p className="eyebrow">Target Completion</p>
-            </div>
-            <div className="scoreLine">
-              <strong>{formatMaybeNumber(stats.completion.latest_score)}</strong>
-              <span>latest score / {scoreDeltaLabel(stats.completion.score_delta_from_previous)}</span>
-            </div>
-            <div className="miniMetricRow">
-              <span>Best {formatMaybeNumber(stats.completion.best_score)}</span>
-              <span>Median {formatMaybeNumber(stats.completion.median_score)}</span>
-              <span>Hit rate {formatPercent(accuracy?.hit_rate)}</span>
-            </div>
-            <ol className="compactList">
-              {completionRuns.slice(0, 5).map((run) => (
-                <li key={run.id}>
-                  <strong>{run.score} balls</strong>
-                  <span>{run.variant}</span>
-                </li>
-              ))}
-            </ol>
-            {completionRuns.length ? null : <EmptyState>No completed 1-9 runs yet.</EmptyState>}
-          </div>
+            <article className="dataPanel completionPanel">
+              <div className="panelHeader">
+                <div>
+                  <p className="eyebrow">Target Completion</p>
+                  <h2>1-9 trend</h2>
+                </div>
+                <span>lower is better</span>
+              </div>
+              <div className="scoreLine heroScore">
+                <strong>{formatMaybeNumber(stats.completion.latest_score)}</strong>
+                <span>
+                  latest / {scoreDeltaLabel(stats.completion.score_delta_from_previous)}
+                </span>
+              </div>
+              <CompletionTrend runs={completionRuns} />
+              <div className="miniMetricRow">
+                <span>Best {formatMaybeNumber(stats.completion.best_score)}</span>
+                <span>Median {formatMaybeNumber(stats.completion.median_score)}</span>
+                <span>Hit rate {formatPercent(accuracy?.hit_rate)}</span>
+              </div>
+            </article>
 
-          <div className="readoutPanel wideReadout">
-            <div className="historyHeader">
-              <p className="eyebrow">Targets</p>
+            <article className="dataPanel targetPanel" id="targets">
+              <div className="panelHeader">
+                <div>
+                  <p className="eyebrow">Targets</p>
+                  <h2>1-9 map</h2>
+                </div>
+                <span>avg balls to hit</span>
+              </div>
+              <TargetMap targets={targets} />
+              {hardestTargets.length || easiestTargets.length ? (
+                <div className="targetInsightGrid">
+                  <div className="weakTargetRow">
+                    <span className="chipLabel">Hardest</span>
+                    {hardestTargets.map((target) => (
+                      <span key={target.target_number}>
+                        T{target.target_number}: {target.average_balls_to_hit}
+                      </span>
+                    ))}
+                  </div>
+                  <div className="sharpTargetRow">
+                    <span className="chipLabel">Sharpest</span>
+                    {easiestTargets.map((target) => (
+                      <span key={target.target_number}>
+                        T{target.target_number}: {target.average_balls_to_hit}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <EmptyState>No target history yet.</EmptyState>
+              )}
+            </article>
+          </section>
+
+          <section className="sessionShowcase" id="sessions">
+            <div className="panelHeader">
+              <div>
+                <p className="eyebrow">Sessions</p>
+                <h2>Recent practice blocks</h2>
+              </div>
+              <span>{formatNumber(overview.total_sessions)} total</span>
             </div>
-            <ol className="targetStatGrid">
-              {targets.map((target) => (
-                <li
-                  className={targetDifficultyClass(target)}
-                  key={target.target_number}
-                  title={`Target ${target.target_number}`}
-                >
-                  <strong>{target.target_number}</strong>
-                  <span>{formatMaybeNumber(target.average_balls_to_hit)}</span>
-                </li>
+            <div className="sessionCardGrid">
+              {recentSessions.slice(0, 6).map((session) => (
+                <SessionCard key={session.id} session={session} />
               ))}
-            </ol>
-            {hardestTargets.length || easiestTargets.length ? (
-              <div className="targetInsightGrid">
-                <div className="weakTargetRow">
-                  <span className="chipLabel">Hardest</span>
-                  {hardestTargets.map((target) => (
-                    <span key={target.target_number}>
-                      T{target.target_number}: {target.average_balls_to_hit}
-                    </span>
+            </div>
+            {recentSessions.length ? null : <EmptyState>No sessions yet.</EmptyState>}
+          </section>
+        </>
+      ) : null}
+    </main>
+  );
+}
+
+function SessionDetail() {
+  const sessionId = getSessionIdFromPath(window.location.pathname);
+  const [detail, setDetail] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let ignore = false;
+
+    async function loadSession() {
+      setLoading(true);
+      setError("");
+
+      try {
+        const response = await api(`/api/public/sessions/${sessionId}`);
+        if (!ignore) {
+          setDetail(response);
+        }
+      } catch (error) {
+        if (!ignore) {
+          setError(error.message);
+        }
+      } finally {
+        if (!ignore) {
+          setLoading(false);
+        }
+      }
+    }
+
+    loadSession();
+    return () => {
+      ignore = true;
+    };
+  }, [sessionId]);
+
+  const session = detail?.session;
+  const buckets = detail?.buckets || [];
+  const games = detail?.games || [];
+  const sourceTotals = Object.entries(detail?.source_totals || {});
+
+  return (
+    <main className="shell dashboardShell">
+      <header className="siteTopbar">
+        <a className="brandMark" href="/">
+          <span>Chip</span>
+          <strong>Tracker</strong>
+        </a>
+        <div className="siteNav">
+          <a href="/">Dashboard</a>
+          <a className="primaryAction" href="/me/login">
+            Log Practice
+          </a>
+        </div>
+      </header>
+
+      {loading ? <p className="muted">Loading...</p> : null}
+      {error ? <p className="pageError">{error}</p> : null}
+
+      {session ? (
+        <>
+          <section className="sessionHero">
+            <div>
+              <p className="eyebrow">Session detail</p>
+              <h1>{formatDateTime(session.started_at)}</h1>
+              <p>
+                {formatNumber(session.ball_count)} balls across {formatNumber(session.bucket_count)}{" "}
+                {session.bucket_count === 1 ? "bucket" : "buckets"} at{" "}
+                {session.default_distance_ft} ft.
+              </p>
+            </div>
+            <div className="sessionHeroStats">
+              <StatCard label="Duration" value={formatDurationSeconds(session.duration_seconds)} />
+              <StatCard label="Games" value={formatNumber(session.game_count)} />
+              <StatCard label="Default" value={`${session.default_club} / ${session.default_distance_ft} ft`} />
+              <div className="statCard">
+                <span>Status</span>
+                <SessionStatusPill status={session.status} />
+              </div>
+            </div>
+          </section>
+
+          <section className="sessionDetailGrid">
+            <article className="dataPanel sessionBucketsPanel">
+              <div className="panelHeader">
+                <div>
+                  <p className="eyebrow">Buckets</p>
+                  <h2>Practice volume</h2>
+                </div>
+                <span>{formatNumber(session.ball_count)} balls</span>
+              </div>
+              {sourceTotals.length ? (
+                <div className="sourceTotals">
+                  {sourceTotals.map(([source, total]) => (
+                    <div key={source}>
+                      <span>{sourceLabel(source)}</span>
+                      <strong>{formatNumber(total)}</strong>
+                    </div>
                   ))}
                 </div>
-                <div className="sharpTargetRow">
-                  <span className="chipLabel">Sharpest</span>
-                  {easiestTargets.map((target) => (
-                    <span key={target.target_number}>
-                      T{target.target_number}: {target.average_balls_to_hit}
-                    </span>
+              ) : null}
+              {buckets.length ? (
+                <ol className="bucketTimeline">
+                  {buckets.map((bucket, index) => (
+                    <li key={bucket.id}>
+                      <span>{index + 1}</span>
+                      <div>
+                        <strong>{formatNumber(bucket.ball_count)} balls</strong>
+                        <small>
+                          {sourceLabel(bucket.source)} / {bucket.club} / {bucket.distance_ft} ft
+                        </small>
+                      </div>
+                    </li>
                   ))}
+                </ol>
+              ) : (
+                <EmptyState>No bucket volume recorded for this session.</EmptyState>
+              )}
+            </article>
+
+            <article className="dataPanel sessionGamesPanel">
+              <div className="panelHeader">
+                <div>
+                  <p className="eyebrow">Games</p>
+                  <h2>Target Completion</h2>
+                </div>
+                <span>{formatNumber(games.length)} runs</span>
+              </div>
+              {games.length ? (
+                <div className="sessionGameStack">
+                  {games.map((game) => (
+                    <div className="sessionGameCard" key={game.id}>
+                      <div className="sessionGameHeader">
+                        <div>
+                          <strong>{game.variant} 1-9</strong>
+                          <small>
+                            {game.status} / {formatDurationSeconds(game.duration_seconds)}
+                          </small>
+                        </div>
+                        <span>{game.score} balls</span>
+                      </div>
+                      <ol className="sessionTargetMap">
+                        {game.targets.map((target) => (
+                          <li className={target.hit ? "completed" : ""} key={target.target_number}>
+                            <strong>{target.target_number}</strong>
+                            <span>{target.attempts}</span>
+                          </li>
+                        ))}
+                      </ol>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <EmptyState>No structured game in this session.</EmptyState>
+              )}
+            </article>
+
+            <article className="dataPanel provenancePanel">
+              <div className="panelHeader">
+                <div>
+                  <p className="eyebrow">System</p>
+                  <h2>Recorded with</h2>
+                </div>
+                <span>{detail.provenance.design_version}</span>
+              </div>
+              <div className="provenanceReadout">
+                <div>
+                  <span>App commit</span>
+                  <strong>{detail.provenance.app_git_sha || "not captured yet"}</strong>
+                </div>
+                <div>
+                  <span>Presentation era</span>
+                  <strong>Manual tracker V0</strong>
                 </div>
               </div>
-            ) : (
-              <EmptyState>No target history yet.</EmptyState>
-            )}
-          </div>
-
-          <div className="readoutPanel wideReadout">
-            <div className="historyHeader">
-              <p className="eyebrow">Sessions</p>
-            </div>
-            <ol className="sessionList observerSessions">
-              {recentSessions.slice(0, 6).map((session) => (
-                <li key={session.id}>
-                  <div>
-                    <strong>{formatDateTime(session.started_at)}</strong>
-                    <span>
-                      {formatNumber(session.ball_count)} balls /{" "}
-                      {formatDurationSeconds(session.duration_seconds)}
-                    </span>
-                  </div>
-                  <SessionStatusPill status={session.status} />
-                </li>
-              ))}
-            </ol>
-            {recentSessions.length ? null : <EmptyState>No sessions yet.</EmptyState>}
-          </div>
-        </section>
+            </article>
+          </section>
+        </>
       ) : null}
     </main>
   );
@@ -1188,6 +1469,10 @@ function OwnerSession() {
 }
 
 export default function App() {
+  if (getSessionIdFromPath(window.location.pathname)) {
+    return <SessionDetail />;
+  }
+
   if (window.location.pathname === "/me/login") {
     return <MeLogin />;
   }
