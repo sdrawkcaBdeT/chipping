@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from datetime import datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from statistics import median
 from typing import Any
 
@@ -38,6 +38,29 @@ def _average(values: list[int]) -> float | None:
     if not values:
         return None
     return round(sum(values) / len(values), 1)
+
+
+def _average_seconds(values: list[int]) -> int | None:
+    if not values:
+        return None
+    return int(round(sum(values) / len(values)))
+
+
+def _balls_in_last_days(
+    daily_totals: dict[str, dict[str, int]],
+    today: date,
+    days: int,
+) -> int:
+    start_date = today - timedelta(days=days - 1)
+    return sum(
+        values["balls"]
+        for date_key, values in daily_totals.items()
+        if date.fromisoformat(date_key) >= start_date
+    )
+
+
+def _datetime_key(value: datetime) -> datetime:
+    return value.replace(tzinfo=None)
 
 
 async def load_practice_data(db: AsyncSession) -> dict[str, list[Any]]:
@@ -98,6 +121,7 @@ def build_summary(data: dict[str, list[Any]]) -> dict[str, Any]:
     total_balls = sum(bucket.ball_count for bucket in buckets)
     completed_sessions = [session for session in sessions if session.status == "completed"]
     active_sessions = [session for session in sessions if session.status == "active"]
+    today = datetime.now(timezone.utc).date()
 
     source_totals: dict[str, int] = defaultdict(int)
     daily_totals: dict[str, dict[str, int]] = defaultdict(lambda: {"balls": 0, "buckets": 0})
@@ -122,6 +146,21 @@ def build_summary(data: dict[str, list[Any]]) -> dict[str, Any]:
         }
         for session in sessions
     ]
+    completed_session_ball_counts = [
+        summary["ball_count"]
+        for summary in session_summaries
+        if summary["status"] == "completed"
+    ]
+    completed_session_durations = [
+        summary["duration_seconds"]
+        for summary in session_summaries
+        if summary["status"] == "completed" and summary["duration_seconds"] is not None
+    ]
+    latest_practice_at = max(
+        [bucket.started_at for bucket in buckets] + [session.started_at for session in sessions],
+        key=_datetime_key,
+        default=None,
+    )
 
     completion_runs = []
     for game in games:
@@ -149,6 +188,10 @@ def build_summary(data: dict[str, list[Any]]) -> dict[str, Any]:
         run for run in completion_runs if run["status"] == "completed" and run["score"] > 0
     ]
     completed_scores = [run["score"] for run in completed_completion_runs]
+    latest_completed_run = completed_completion_runs[0] if completed_completion_runs else None
+    previous_completed_run = (
+        completed_completion_runs[1] if len(completed_completion_runs) > 1 else None
+    )
 
     variant_scores: dict[str, list[int]] = defaultdict(list)
     for run in completed_completion_runs:
@@ -178,6 +221,25 @@ def build_summary(data: dict[str, list[Any]]) -> dict[str, Any]:
     hit_count = sum(1 for event in events if event.action == "hit")
     miss_count = sum(1 for event in events if event.action == "miss")
 
+    target_stats_with_hits = [
+        target for target in target_stats if target["average_balls_to_hit"] is not None
+    ]
+    hardest_targets = sorted(
+        target_stats_with_hits,
+        key=lambda target: (
+            target["average_balls_to_hit"] or 0,
+            target["attempts"],
+        ),
+        reverse=True,
+    )[:3]
+    easiest_targets = sorted(
+        target_stats_with_hits,
+        key=lambda target: (
+            target["average_balls_to_hit"] or 0,
+            -target["attempts"],
+        ),
+    )[:3]
+
     return {
         "overview": {
             "total_sessions": len(sessions),
@@ -185,15 +247,29 @@ def build_summary(data: dict[str, list[Any]]) -> dict[str, Any]:
             "active_sessions": len(active_sessions),
             "total_balls": total_balls,
             "bucket_count": len(buckets),
+            "practice_days": len(daily_totals),
+            "balls_last_7_days": _balls_in_last_days(daily_totals, today, 7),
+            "balls_last_30_days": _balls_in_last_days(daily_totals, today, 30),
+            "average_balls_per_completed_session": _average(completed_session_ball_counts),
+            "average_completed_session_duration_seconds": _average_seconds(
+                completed_session_durations
+            ),
             "target_completion_runs": len(games),
             "completed_target_completion_runs": len(completed_completion_runs),
             "best_completion_score": min(completed_scores) if completed_scores else None,
             "median_completion_score": median(completed_scores) if completed_scores else None,
             "latest_session_at": _iso(sessions[0].started_at) if sessions else None,
+            "latest_practice_at": _iso(latest_practice_at),
         },
         "volume": {
             "total_balls": total_balls,
             "bucket_count": len(buckets),
+            "practice_days": len(daily_totals),
+            "balls_last_7_days": _balls_in_last_days(daily_totals, today, 7),
+            "balls_last_30_days": _balls_in_last_days(daily_totals, today, 30),
+            "average_balls_per_practice_day": _average(
+                [values["balls"] for values in daily_totals.values()]
+            ),
             "source_totals": dict(sorted(source_totals.items())),
             "daily": [
                 {"date": date, **values}
@@ -208,17 +284,30 @@ def build_summary(data: dict[str, list[Any]]) -> dict[str, Any]:
         },
         "targets": {
             "targets": target_stats,
+            "hardest_targets": hardest_targets,
+            "easiest_targets": easiest_targets,
         },
         "completion": {
             "runs": completion_runs,
             "completed_runs": completed_completion_runs,
+            "completed_count": len(completed_completion_runs),
             "best_score": min(completed_scores) if completed_scores else None,
             "median_score": median(completed_scores) if completed_scores else None,
             "average_score": _average(completed_scores),
+            "latest_score": latest_completed_run["score"] if latest_completed_run else None,
+            "latest_completed_at": (
+                latest_completed_run["ended_at"] if latest_completed_run else None
+            ),
+            "score_delta_from_previous": (
+                latest_completed_run["score"] - previous_completed_run["score"]
+                if latest_completed_run and previous_completed_run
+                else None
+            ),
             "variant_comparison": {
                 variant: {
                     "completed_runs": len(scores),
                     "best_score": min(scores) if scores else None,
+                    "median_score": median(scores) if scores else None,
                     "average_score": _average(scores),
                 }
                 for variant, scores in sorted(variant_scores.items())

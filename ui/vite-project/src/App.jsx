@@ -51,6 +51,14 @@ function formatNumber(value) {
   return new Intl.NumberFormat().format(value || 0);
 }
 
+function formatMaybeNumber(value) {
+  if (value === null || value === undefined) {
+    return "n/a";
+  }
+
+  return formatNumber(value);
+}
+
 function formatPercent(value) {
   if (value === null || value === undefined) {
     return "n/a";
@@ -102,6 +110,38 @@ function isEarlierDate(value) {
 
 const QUICK_LOG_COUNTS = [42, 21, 10];
 
+function sourceLabel(source) {
+  return source.replaceAll("_", " ");
+}
+
+function scoreDeltaLabel(value) {
+  if (value === null || value === undefined) {
+    return "no prior run";
+  }
+
+  if (value === 0) {
+    return "even with prior run";
+  }
+
+  return value < 0 ? `${Math.abs(value)} better than prior` : `${value} higher than prior`;
+}
+
+function targetDifficultyClass(target) {
+  if (target.average_balls_to_hit === null || target.average_balls_to_hit === undefined) {
+    return "noData";
+  }
+
+  if (target.average_balls_to_hit >= 3) {
+    return "hard";
+  }
+
+  if (target.average_balls_to_hit <= 1.5) {
+    return "sharp";
+  }
+
+  return "";
+}
+
 function StatCard({ label, value, detail }) {
   return (
     <div className="statCard">
@@ -110,6 +150,10 @@ function StatCard({ label, value, detail }) {
       {detail ? <small>{detail}</small> : null}
     </div>
   );
+}
+
+function EmptyState({ children }) {
+  return <p className="emptyState">{children}</p>;
 }
 
 function ObserverDashboard() {
@@ -158,12 +202,11 @@ function ObserverDashboard() {
   const volume = stats?.volume;
   const accuracy = stats?.accuracy;
   const targets = stats?.targets?.targets || [];
+  const hardestTargets = stats?.targets?.hardest_targets || [];
+  const easiestTargets = stats?.targets?.easiest_targets || [];
   const completionRuns = stats?.completion?.completed_runs || [];
   const recentSessions = stats?.sessions?.sessions || [];
-  const topWeakTargets = [...targets]
-    .filter((target) => target.attempts > 0)
-    .sort((a, b) => (b.average_balls_to_hit || 0) - (a.average_balls_to_hit || 0))
-    .slice(0, 3);
+  const sourceTotals = Object.entries(volume?.source_totals || {});
 
   return (
     <main className="shell">
@@ -188,14 +231,26 @@ function ObserverDashboard() {
               <h2>{formatNumber(overview.total_balls)} balls tracked</h2>
             </div>
             <div className="statGrid">
-              <StatCard label="Sessions" value={formatNumber(overview.total_sessions)} />
-              <StatCard label="Buckets" value={formatNumber(overview.bucket_count)} />
+              <StatCard
+                label="Last 7 days"
+                value={`${formatNumber(overview.balls_last_7_days)} balls`}
+                detail={
+                  overview.latest_practice_at
+                    ? `Last ${formatDateTime(overview.latest_practice_at)}`
+                    : "No practice logged"
+                }
+              />
+              <StatCard label="Practice days" value={formatNumber(overview.practice_days)} />
               <StatCard
                 label="Best 1-9"
-                value={overview.best_completion_score ?? "n/a"}
+                value={formatMaybeNumber(overview.best_completion_score)}
                 detail="balls"
               />
-              <StatCard label="Hit rate" value={formatPercent(accuracy?.hit_rate)} />
+              <StatCard
+                label="Avg session"
+                value={formatMaybeNumber(overview.average_balls_per_completed_session)}
+                detail="balls"
+              />
             </div>
           </div>
 
@@ -204,12 +259,17 @@ function ObserverDashboard() {
               <p className="eyebrow">Volume</p>
             </div>
             <div className="sourceTotals">
-              {Object.entries(volume?.source_totals || {}).map(([source, total]) => (
+              {sourceTotals.map(([source, total]) => (
                 <div key={source}>
-                  <span>{source.replace("_", " ")}</span>
+                  <span>{sourceLabel(source)}</span>
                   <strong>{formatNumber(total)}</strong>
                 </div>
               ))}
+            </div>
+            {!sourceTotals.length ? <EmptyState>No logged volume yet.</EmptyState> : null}
+            <div className="miniMetricRow">
+              <span>{formatNumber(volume?.balls_last_30_days)} balls / 30 days</span>
+              <span>{formatMaybeNumber(volume?.average_balls_per_practice_day)} avg / day</span>
             </div>
             <ol className="compactList">
               {(volume?.daily || []).slice(0, 5).map((day) => (
@@ -219,6 +279,7 @@ function ObserverDashboard() {
                 </li>
               ))}
             </ol>
+            {volume?.daily?.length ? null : <EmptyState>No practice days yet.</EmptyState>}
           </div>
 
           <div className="readoutPanel">
@@ -226,8 +287,13 @@ function ObserverDashboard() {
               <p className="eyebrow">Target Completion</p>
             </div>
             <div className="scoreLine">
-              <strong>{stats.completion.best_score ?? "n/a"}</strong>
-              <span>best score</span>
+              <strong>{formatMaybeNumber(stats.completion.latest_score)}</strong>
+              <span>latest score / {scoreDeltaLabel(stats.completion.score_delta_from_previous)}</span>
+            </div>
+            <div className="miniMetricRow">
+              <span>Best {formatMaybeNumber(stats.completion.best_score)}</span>
+              <span>Median {formatMaybeNumber(stats.completion.median_score)}</span>
+              <span>Hit rate {formatPercent(accuracy?.hit_rate)}</span>
             </div>
             <ol className="compactList">
               {completionRuns.slice(0, 5).map((run) => (
@@ -237,6 +303,7 @@ function ObserverDashboard() {
                 </li>
               ))}
             </ol>
+            {completionRuns.length ? null : <EmptyState>No completed 1-9 runs yet.</EmptyState>}
           </div>
 
           <div className="readoutPanel wideReadout">
@@ -245,21 +312,38 @@ function ObserverDashboard() {
             </div>
             <ol className="targetStatGrid">
               {targets.map((target) => (
-                <li key={target.target_number}>
+                <li
+                  className={targetDifficultyClass(target)}
+                  key={target.target_number}
+                  title={`Target ${target.target_number}`}
+                >
                   <strong>{target.target_number}</strong>
-                  <span>{target.average_balls_to_hit ?? "n/a"}</span>
+                  <span>{formatMaybeNumber(target.average_balls_to_hit)}</span>
                 </li>
               ))}
             </ol>
-            {topWeakTargets.length ? (
-              <div className="weakTargetRow">
-                {topWeakTargets.map((target) => (
-                  <span key={target.target_number}>
-                    T{target.target_number}: {target.average_balls_to_hit}
-                  </span>
-                ))}
+            {hardestTargets.length || easiestTargets.length ? (
+              <div className="targetInsightGrid">
+                <div className="weakTargetRow">
+                  <span className="chipLabel">Hardest</span>
+                  {hardestTargets.map((target) => (
+                    <span key={target.target_number}>
+                      T{target.target_number}: {target.average_balls_to_hit}
+                    </span>
+                  ))}
+                </div>
+                <div className="sharpTargetRow">
+                  <span className="chipLabel">Sharpest</span>
+                  {easiestTargets.map((target) => (
+                    <span key={target.target_number}>
+                      T{target.target_number}: {target.average_balls_to_hit}
+                    </span>
+                  ))}
+                </div>
               </div>
-            ) : null}
+            ) : (
+              <EmptyState>No target history yet.</EmptyState>
+            )}
           </div>
 
           <div className="readoutPanel wideReadout">
@@ -280,6 +364,7 @@ function ObserverDashboard() {
                 </li>
               ))}
             </ol>
+            {recentSessions.length ? null : <EmptyState>No sessions yet.</EmptyState>}
           </div>
         </section>
       ) : null}
@@ -352,7 +437,7 @@ function SessionStatusPill({ status }) {
   return <span className={`statusPill ${status}`}>{status}</span>;
 }
 
-function QuickLogPanel({ activeSession, buckets, disabled, onQuickLog }) {
+function QuickLogPanel({ activeSession, buckets, disabled, sessionTotal, onQuickLog }) {
   const [selectedCount, setSelectedCount] = useState(42);
   const [customCount, setCustomCount] = useState("");
   const [useCustom, setUseCustom] = useState(false);
@@ -387,6 +472,10 @@ function QuickLogPanel({ activeSession, buckets, disabled, onQuickLog }) {
 
       {activeSession ? (
         <div className="quickLogActive">
+          <div className="quickLogSummary">
+            <span>Session total</span>
+            <strong>{formatNumber(sessionTotal)} balls</strong>
+          </div>
           <div className="quickButtons">
             {QUICK_LOG_COUNTS.map((count) => (
               <button
@@ -419,7 +508,7 @@ function QuickLogPanel({ activeSession, buckets, disabled, onQuickLog }) {
               onClick={() => logCustom("active")}
               disabled={disabled || !canLog || !useCustom}
             >
-              Log
+              Log Custom
             </button>
           </div>
         </div>
@@ -531,6 +620,7 @@ function TargetCompletionPanel({
   }
 
   const currentTarget = activeGame.current_target;
+  const completedCount = activeGame.completed_targets.length;
 
   return (
     <div className="targetGamePanel activeTargetGame">
@@ -542,7 +632,15 @@ function TargetCompletionPanel({
         <SessionStatusPill status={activeGame.variant} />
       </div>
 
+      <div className="progressRail" aria-label="Target Completion progress">
+        <span style={{ width: `${Math.round((completedCount / 9) * 100)}%` }} />
+      </div>
+
       <div className="gameStats">
+        <div>
+          <span>Progress</span>
+          <strong>{completedCount}/9</strong>
+        </div>
         <div>
           <span>Target attempts</span>
           <strong>{currentTarget ? currentTarget.attempts : 0}</strong>
@@ -685,11 +783,13 @@ function OwnerSession() {
       api("/api/game-runs/active")
     ]);
     const buckets = active ? await api(`/api/sessions/${active.id}/buckets`) : [];
+    const nextState = { active, history, game, buckets };
 
     setActiveSession(active);
     setActiveBuckets(buckets);
     setActiveGame(game);
     setSessions(history);
+    return nextState;
   }
 
   useEffect(() => {
@@ -740,6 +840,7 @@ function OwnerSession() {
       });
       setActiveSession(session);
       await refreshSessions();
+      setQuickLogMessage("Session started");
       window.history.replaceState({}, "", "/me/session/active");
     } catch (error) {
       setError(error.message);
@@ -761,6 +862,7 @@ function OwnerSession() {
     try {
       await api(`/api/sessions/${activeSession.id}/stop`, { method: "POST" });
       await refreshSessions();
+      setQuickLogMessage(`Session ended: ${formatNumber(activeBallTotal)} balls`);
       window.history.replaceState({}, "", "/me");
     } catch (error) {
       setError(error.message);
@@ -782,6 +884,7 @@ function OwnerSession() {
     try {
       await api(`/api/sessions/${activeSession.id}/abandon`, { method: "POST" });
       await refreshSessions();
+      setQuickLogMessage("Session abandoned");
       window.history.replaceState({}, "", "/me");
     } catch (error) {
       setError(error.message);
@@ -809,11 +912,27 @@ function OwnerSession() {
           mode
         })
       });
-      await refreshSessions();
+      const refreshed = await refreshSessions();
       if (result.session.status === "active") {
         window.history.replaceState({}, "", "/me/session/active");
       }
-      setQuickLogMessage(`Logged +${result.bucket.ball_count}`);
+      const refreshedSessionTotal = refreshed.buckets.reduce(
+        (total, bucket) => total + bucket.ball_count,
+        0
+      );
+      if (result.standalone_session_created) {
+        setQuickLogMessage(`Logged standalone +${result.bucket.ball_count}`);
+      } else if (result.active_session_created) {
+        setQuickLogMessage(
+          `Started session and logged +${result.bucket.ball_count} - ${formatNumber(
+            refreshedSessionTotal
+          )} balls total`
+        );
+      } else {
+        setQuickLogMessage(
+          `Logged +${result.bucket.ball_count} - ${formatNumber(refreshedSessionTotal)} balls total`
+        );
+      }
     } catch (error) {
       setError(error.message);
     } finally {
@@ -834,6 +953,7 @@ function OwnerSession() {
       });
       setActiveGame(game);
       await refreshSessions();
+      setGameMessage(`Started ${variant} 1-9`);
       window.history.replaceState({}, "", `/me/game/${game.id}`);
     } catch (error) {
       setError(error.message);
@@ -895,7 +1015,7 @@ function OwnerSession() {
       const game = await api(`/api/game-runs/${activeGame.id}`);
       setActiveGame(game);
       await refreshSessions();
-      setGameMessage("Bucket ended");
+      setGameMessage("Bucket ended / retrieve");
     } catch (error) {
       setError(error.message);
     } finally {
@@ -923,6 +1043,33 @@ function OwnerSession() {
           </button>
         </div>
       </header>
+
+      {activeSession ? (
+        <section className="liveStrip" aria-label="Active practice status">
+          <div>
+            <span>Session</span>
+            <strong>{sessionDuration(activeSession)}</strong>
+          </div>
+          <div>
+            <span>Balls</span>
+            <strong>{formatNumber(activeBallTotal)}</strong>
+          </div>
+          <div>
+            <span>Game</span>
+            <strong>
+              {activeGame
+                ? `${activeGame.completed_targets.length}/9 ${activeGame.variant}`
+                : "Open"}
+            </strong>
+          </div>
+          <div>
+            <span>Default</span>
+            <strong>
+              {activeSession.default_club} / {activeSession.default_distance_ft} ft
+            </strong>
+          </div>
+        </section>
+      ) : null}
 
       <section className="sessionGrid">
         <div className="panel sessionPanel">
@@ -1000,6 +1147,7 @@ function OwnerSession() {
             activeSession={activeSession}
             buckets={activeBuckets}
             disabled={controlsDisabled}
+            sessionTotal={activeBallTotal}
             onQuickLog={quickLog}
           />
         ) : null}
@@ -1030,9 +1178,11 @@ function OwnerSession() {
         <OwnerToolsPanel />
       </section>
 
-      {quickLogMessage ? <p className="successMessage">{quickLogMessage}</p> : null}
-      {gameMessage ? <p className="successMessage">{gameMessage}</p> : null}
-      {error ? <p className="pageError">{error}</p> : null}
+      <div className="toastStack" aria-live="polite">
+        {quickLogMessage ? <p className="successMessage">{quickLogMessage}</p> : null}
+        {gameMessage ? <p className="successMessage">{gameMessage}</p> : null}
+        {error ? <p className="pageError">{error}</p> : null}
+      </div>
     </main>
   );
 }

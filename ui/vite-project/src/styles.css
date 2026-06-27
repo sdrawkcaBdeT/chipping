@@ -277,6 +277,18 @@ button:disabled {
   color: #1d6041;
 }
 
+.emptyState {
+  min-height: 48px;
+  margin: 0;
+  display: grid;
+  align-content: center;
+  border: 1px dashed rgba(23, 63, 53, 0.18);
+  border-radius: 8px;
+  padding: 12px;
+  color: #5d695d;
+  background: rgba(245, 247, 242, 0.58);
+}
+
 .sessionGrid {
   display: grid;
   gap: 18px;
@@ -361,6 +373,24 @@ button:disabled {
   gap: 4px;
 }
 
+.miniMetricRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.miniMetricRow span {
+  display: inline-flex;
+  min-height: 30px;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0 10px;
+  background: rgba(23, 63, 53, 0.08);
+  color: #405243;
+  font-size: 0.84rem;
+  font-weight: 800;
+}
+
 .compactList {
   display: grid;
   gap: 8px;
@@ -406,6 +436,20 @@ button:disabled {
   background: #ffffff;
 }
 
+.targetStatGrid li.hard {
+  border-color: rgba(138, 37, 37, 0.22);
+  background: #f8e8e2;
+}
+
+.targetStatGrid li.sharp {
+  border-color: rgba(29, 96, 65, 0.22);
+  background: #dfeee5;
+}
+
+.targetStatGrid li.noData {
+  background: rgba(255, 255, 255, 0.56);
+}
+
 .targetStatGrid strong {
   color: #172018;
 }
@@ -416,22 +460,43 @@ button:disabled {
   font-weight: 700;
 }
 
-.weakTargetRow {
+.targetInsightGrid {
+  display: grid;
+  gap: 8px;
+}
+
+.weakTargetRow,
+.sharpTargetRow {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
 }
 
-.weakTargetRow span {
+.weakTargetRow span,
+.sharpTargetRow span {
   display: inline-flex;
   min-height: 32px;
   align-items: center;
   border-radius: 999px;
   padding: 0 10px;
-  background: #f3e4e0;
-  color: #8a2525;
   font-size: 0.84rem;
   font-weight: 800;
+}
+
+.weakTargetRow span {
+  background: #f3e4e0;
+  color: #8a2525;
+}
+
+.sharpTargetRow span {
+  background: #dfeee5;
+  color: #1d6041;
+}
+
+.weakTargetRow .chipLabel,
+.sharpTargetRow .chipLabel {
+  background: rgba(23, 63, 53, 0.08);
+  color: #405243;
 }
 
 .sessionPanel {
@@ -480,6 +545,48 @@ button:disabled {
 
 .ownerToolsPanel {
   align-content: start;
+}
+
+.liveStrip {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: -8px 0 18px;
+  padding: 10px;
+  border: 1px solid rgba(23, 63, 53, 0.14);
+  border-radius: 8px;
+  background: rgba(245, 247, 242, 0.94);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 14px 32px rgba(30, 53, 40, 0.1);
+}
+
+.liveStrip div,
+.quickLogSummary {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 10px;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.liveStrip span,
+.quickLogSummary span {
+  color: #5d695d;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.liveStrip strong,
+.quickLogSummary strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: #172018;
+  font-size: 1rem;
 }
 
 .exportGrid {
@@ -566,6 +673,22 @@ button:disabled {
   font-size: 1.2rem;
 }
 
+.progressRail {
+  height: 10px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(23, 63, 53, 0.1);
+}
+
+.progressRail span {
+  display: block;
+  height: 100%;
+  min-width: 0;
+  border-radius: inherit;
+  background: #1d6041;
+  transition: width 180ms ease;
+}
+
 .targetGrid {
   display: grid;
   grid-template-columns: repeat(9, minmax(0, 1fr));
@@ -614,6 +737,10 @@ button:disabled {
 .quickLogStandalone {
   display: grid;
   gap: 10px;
+}
+
+.quickLogSummary {
+  min-height: 66px;
 }
 
 .quickButtons,
@@ -735,6 +862,34 @@ button:disabled {
   color: #8a2525;
 }
 
+.toastStack {
+  position: fixed;
+  right: max(16px, calc((100vw - 1040px) / 2 + 16px));
+  bottom: 16px;
+  z-index: 20;
+  display: grid;
+  width: min(420px, calc(100vw - 32px));
+  gap: 8px;
+}
+
+.toastStack:empty {
+  display: none;
+}
+
+.toastStack .successMessage,
+.toastStack .pageError {
+  margin: 0;
+  border: 1px solid rgba(23, 63, 53, 0.18);
+  border-radius: 8px;
+  padding: 12px 14px;
+  background: #ffffff;
+  box-shadow: 0 16px 40px rgba(30, 53, 40, 0.18);
+}
+
+.toastStack .pageError {
+  border-color: rgba(138, 37, 37, 0.24);
+}
+
 @media (min-width: 760px) {
   .shell {
     padding: 40px 28px 56px;
@@ -751,6 +906,10 @@ button:disabled {
 
   .sessionGrid {
     grid-template-columns: minmax(0, 1fr) 320px;
+  }
+
+  .liveStrip {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
   .observerGrid {

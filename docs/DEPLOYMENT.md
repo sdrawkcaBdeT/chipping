@@ -17,9 +17,41 @@ Required values:
 
 The Compose stack does not publish the app or Postgres to host ports. Cloudflare reaches the app at `http://app:8000` from the `cloudflared` container.
 
-## Build And Start
+## UGREEN NAS Docker App
 
-From the repository root on the server:
+The deployed pattern is one UGREEN Docker project named `chipping`, pointed at the repository folder:
+
+```text
+../python_projects/chipping
+```
+
+That folder should contain:
+
+```text
+docker-compose.yml
+.env
+Dockerfile
+server/
+ui/
+```
+
+Create the Docker project from `docker-compose.yml`. The project should build/start these containers together:
+
+- `chipping-db-1`
+- `chipping-app-1`
+- `chipping-cloudflared-1`
+
+The UGREEN UI may show a build/deploy step before the containers are actually running. Cloudflare will not show the connector as online until `cloudflared` has started and checked in.
+
+Expected harmless build warning:
+
+```text
+current commit information was not captured by the build ... git was not found
+```
+
+## Build And Start With CLI
+
+If managing the stack over SSH instead of the UGREEN Docker UI, run from the repository root on the server:
 
 ```bash
 docker compose up -d --build
@@ -44,7 +76,17 @@ Expected response:
 
 ## Cloudflare Tunnel
 
-Configure the public hostname:
+Setup order:
+
+1. Create the tunnel in Cloudflare Zero Trust.
+2. Choose **Docker** for the connector environment.
+3. Copy only the token value from the Docker command Cloudflare shows.
+4. Put that value in the server `.env` as `CF_TUNNEL_TOKEN`.
+5. Start/deploy the UGREEN Docker project.
+6. Wait for the tunnel connector to show online in Cloudflare.
+7. Add the published application/public hostname route.
+
+Configure the published application/public hostname route:
 
 - Hostname: `chip.cashbaggins.dev`
 - Service: `http://app:8000`
@@ -57,6 +99,22 @@ COOKIE_SECURE=true
 ```
 
 When Cloudflare asks for the connector environment, choose **Docker**. Copy the tunnel token from the Docker command Cloudflare shows and put only the token value in `.env` as `CF_TUNNEL_TOKEN`.
+
+Do not run Cloudflare's raw `docker run ...` command separately for this app. The `cloudflared` service is already part of `docker-compose.yml`.
+
+## Post-Deploy Smoke Test
+
+After the connector is online:
+
+- Open `https://chip.cashbaggins.dev/api/health`.
+- Open `https://chip.cashbaggins.dev`.
+- Enter Me Mode from `Log Practice`.
+- Start a session.
+- Quick-log a small bucket or partial bucket.
+- Stop the session.
+- Return to Observer Mode and confirm the public stats changed.
+
+If Cloudflare is still waiting for a connector, check the `cloudflared` container logs first. If `cloudflared` is waiting on the app, check the `app` container logs and health state.
 
 ## Backups
 

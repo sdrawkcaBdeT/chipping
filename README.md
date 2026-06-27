@@ -2,9 +2,9 @@
 
 Personal golf chipping tracker for `chip.cashbaggins.dev`.
 
-This repository currently includes the scaffold, owner PIN auth, manual practice sessions, Quick Log, buckets/partial buckets, Target Completion 1-9, observer stats, export, and a prompt helper. The app includes a FastAPI backend, a Vite React frontend, Postgres wiring through SQLAlchemy, Alembic migrations, and Docker Compose.
+This repository includes the V0 app: owner PIN auth, manual practice sessions, Quick Log, buckets/partial buckets, Target Completion 1-9, observer stats, export, a prompt helper, and the NAS/Cloudflare deployment pattern. The app includes a FastAPI backend, a Vite React frontend, Postgres wiring through SQLAlchemy, Alembic migrations, and Docker Compose.
 
-Deployment polish is documented in `docs/DEPLOYMENT.md`.
+Current implementation status is tracked in `docs/IMPLEMENTATION.md`. Deployment notes are in `docs/DEPLOYMENT.md`.
 
 ## Run With Docker
 
@@ -60,7 +60,7 @@ Optional:
 
 ## Database Migrations
 
-Alembic is configured with the initial `practice_sessions` migration.
+Alembic migrations cover sessions, buckets, and Target Completion.
 
 ```powershell
 alembic -c alembic.ini revision --autogenerate -m "describe change"
@@ -75,13 +75,13 @@ cd ui\vite-project
 npm run build
 ```
 
-## Current Milestone Boundaries
+## Implemented V0 Surface
 
 Included:
 
 - `/api/health`
 - Postgres connectivity check from FastAPI
-- Observer Mode placeholder at `/`
+- Observer Mode dashboard at `/`
 - Me Mode login at `/me/login`
 - Signed HTTP-only owner cookie
 - Owner-protected manual session routes
@@ -96,8 +96,9 @@ Included:
 - Public read-only observer stats
 - Owner CSV and JSON export
 - Owner prompt helper
-- Docker Compose with Postgres and app container
+- Docker Compose with Postgres, app, and Cloudflare Tunnel containers
 
-Not included yet:
+Operational follow-ups:
 
-- Automated server provisioning
+- Automated server provisioning is not included.
+- Backups should be rehearsed against a disposable database before relying on them.

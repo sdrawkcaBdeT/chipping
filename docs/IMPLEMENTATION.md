@@ -1,50 +1,81 @@
-# Implementation Plan
+# Implementation Status
 
-## Current milestone: Scaffold
+## Current status: V0 deployed
 
-Goal: create the initial app foundation only.
+The app is beyond the original scaffold milestone. V0 is implemented and has been deployed through the UGREEN NAS Docker Compose project plus Cloudflare Tunnel pattern.
 
-### Scope
+Production hostname:
 
-- FastAPI backend in `server/`
-- React + Vite frontend in `ui/vite-project/`
-- Postgres with SQLAlchemy
-- Alembic configured
-- Docker Compose
-- Multi-stage Dockerfile
-- `.env.example`
-- README
-- Basic Observer Mode placeholder
-- Me Mode login placeholder
-- `/api/health`
+`https://chip.cashbaggins.dev`
 
-### Out of scope
-
-- Manual sessions
-- Quick Log
-- Target Completion
-- Analytics
-- Charts
-- Export
-- Prompt helper
-- Deployment automation
-
-### Acceptance criteria
-
-- `docker compose up --build` starts the app.
-- `/api/health` returns OK.
-- FastAPI can connect to Postgres.
-- React app builds.
-- Visiting `/` shows an Observer Mode placeholder.
-- There is a Me Mode / Log Practice button.
-- Production container serves the built frontend from FastAPI.
-
-## Milestones
+## Completed Milestones
 
 1. Scaffold
-2. Owner PIN auth + manual sessions
-3. Quick Log + buckets/partial buckets
+   - FastAPI backend in `server/`
+   - React + Vite frontend in `ui/vite-project/`
+   - SQLAlchemy async database wiring
+   - Alembic migrations
+   - Multi-stage Dockerfile
+   - Docker Compose
+   - `/api/health`
+
+2. Owner auth + manual sessions
+   - Owner PIN/password login
+   - Signed HTTP-only cookie
+   - Owner-only write routes
+   - Manual session start, stop, abandon, list, view, update, and delete
+   - One active session at a time
+
+3. Quick Log + buckets
+   - `+42`, `+21`, `+10`, and custom ball counts
+   - Active-session logging
+   - Explicit no-active-session choices
+   - Standalone quick session support
+   - Bucket and partial bucket persistence
+
 4. Target Completion 1-9
-5. Observer dashboard + basic analytics
-6. Export + LLM prompt helper
+   - Sequential 1-9
+   - Random 1-9
+   - Miss, hit, undo
+   - End bucket / retrieve
+   - Stop game without stopping session
+   - Stop session closes active game/bucket work
+
+5. Observer dashboard + analytics
+   - Public read-only stats endpoints
+   - Overview, volume, accuracy, targets, completion, and sessions
+   - Dashboard renders recent volume, completion trend, target difficulty, and session history
+
+6. Export + prompt helper
+   - Owner-only JSON export
+   - Owner-only CSV export
+   - Owner-only practice-summary prompt helper
+
 7. Deployment polish
+   - Compose stack runs `db`, `app`, and `cloudflared`
+   - App and Postgres are not exposed on host ports
+   - Cloudflare routes `chip.cashbaggins.dev` to `http://app:8000`
+   - Production `.env` template documents required secrets
+   - Deployment notes cover UGREEN NAS and Cloudflare setup
+
+## Current Acceptance Snapshot
+
+- Observer Mode loads by default at `/`.
+- Observer Mode is read-only.
+- Owner can enter Me Mode with the configured credential.
+- Backend rejects owner writes without auth.
+- Owner can manually start and stop sessions.
+- Owner can log quick buckets and partial buckets.
+- Owner can run Target Completion across retrievals.
+- Observer stats update after practice is logged.
+- Owner export and prompt helper are protected.
+- The app runs on the NAS through Docker Compose with Postgres and Cloudflare Tunnel.
+
+## Remaining Work
+
+These are polish items, not blockers for V0:
+
+- Add more practice-history drilldowns once real data exists.
+- Improve trend charts after enough Target Completion runs accumulate.
+- Add a tested backup/restore rehearsal against a disposable database.
+- Consider owner settings for default club and distance instead of fixed frontend defaults.

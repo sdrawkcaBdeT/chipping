@@ -49,7 +49,13 @@ def test_public_stats_summarize_sessions_volume_completion_and_targets(session_c
 
     assert overview["total_sessions"] == 2
     assert overview["total_balls"] == 31
+    assert overview["practice_days"] == 1
+    assert overview["balls_last_7_days"] == 31
+    assert overview["average_balls_per_completed_session"] == 15.5
     assert overview["best_completion_score"] == 10
+    assert overview["latest_practice_at"] is not None
+    assert volume["practice_days"] == 1
+    assert volume["average_balls_per_practice_day"] == 31
     assert volume["source_totals"]["target_completion"] == 10
     assert volume["source_totals"]["quick_log"] == 21
     assert accuracy == {
@@ -60,7 +66,12 @@ def test_public_stats_summarize_sessions_volume_completion_and_targets(session_c
     }
     assert targets["targets"][0]["target_number"] == 1
     assert targets["targets"][0]["average_balls_to_hit"] == 2
+    assert targets["hardest_targets"][0]["target_number"] == 1
+    assert targets["easiest_targets"][0]["average_balls_to_hit"] == 1
     assert completion["best_score"] == 10
+    assert completion["latest_score"] == 10
+    assert completion["completed_count"] == 1
+    assert completion["variant_comparison"]["sequential"]["median_score"] == 10
     assert completion["completed_runs"][0]["score"] == 10
     assert len(sessions["sessions"]) == 2
 
