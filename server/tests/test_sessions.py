@@ -1,41 +1,4 @@
-import asyncio
-
-import pytest
 from fastapi.testclient import TestClient
-
-from app.config import get_settings
-from app.database import Base, get_engine, reset_database_caches
-from app.main import create_app
-import app.models  # noqa: F401
-
-
-@pytest.fixture
-def session_client(monkeypatch, tmp_path):
-    monkeypatch.setenv("DATABASE_URL", f"sqlite+aiosqlite:///{tmp_path / 'test.db'}")
-    monkeypatch.setenv("OWNER_PIN", "1234")
-    monkeypatch.setenv("JWT_SECRET", "test-secret")
-    monkeypatch.setenv("COOKIE_SECURE", "false")
-    get_settings.cache_clear()
-    reset_database_caches()
-
-    async def prepare_database() -> None:
-        async with get_engine().begin() as connection:
-            await connection.run_sync(Base.metadata.create_all)
-
-    asyncio.run(prepare_database())
-    client = TestClient(create_app())
-
-    try:
-        yield client
-    finally:
-        client.close()
-
-        async def dispose_database() -> None:
-            await get_engine().dispose()
-
-        asyncio.run(dispose_database())
-        reset_database_caches()
-        get_settings.cache_clear()
 
 
 def _login(client: TestClient) -> None:

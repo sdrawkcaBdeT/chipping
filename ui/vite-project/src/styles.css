@@ -52,6 +52,10 @@ a {
   gap: 10px;
 }
 
+.topbarActions button {
+  width: auto;
+}
+
 .eyebrow {
   margin: 0 0 6px;
   color: #526052;
@@ -257,6 +261,7 @@ button:disabled {
 
 .formError,
 .pageError,
+.successMessage,
 .warningText {
   margin: 0;
   color: #8a2525;
@@ -265,6 +270,11 @@ button:disabled {
 
 .pageError {
   margin-top: 18px;
+}
+
+.successMessage {
+  margin-top: 18px;
+  color: #1d6041;
 }
 
 .sessionGrid {
@@ -316,8 +326,58 @@ button:disabled {
   background: rgba(255, 255, 255, 0.68);
 }
 
+.quickLogPanel {
+  display: grid;
+  gap: 16px;
+  padding: 22px;
+  border: 1px solid rgba(23, 63, 53, 0.14);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
 .historyHeader {
   margin-bottom: 14px;
+}
+
+.quickLogActive,
+.quickLogStandalone {
+  display: grid;
+  gap: 10px;
+}
+
+.quickButtons,
+.countPicker {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.countPicker button.selected {
+  border-color: rgba(23, 63, 53, 0.5);
+  background: #173f35;
+  color: #ffffff;
+}
+
+.customLogRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(76px, 96px);
+  gap: 8px;
+}
+
+.quickChoiceGrid {
+  display: grid;
+  gap: 8px;
+}
+
+.quickChoiceGrid button {
+  min-height: 50px;
+  white-space: normal;
+}
+
+.bucketListWrap {
+  display: grid;
+  gap: 10px;
+  margin-top: 4px;
 }
 
 .sessionList {
@@ -338,6 +398,35 @@ button:disabled {
   border: 1px solid rgba(23, 63, 53, 0.12);
   border-radius: 8px;
   background: #ffffff;
+}
+
+.bucketList {
+  display: grid;
+  gap: 8px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.bucketList li {
+  display: flex;
+  min-height: 48px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid rgba(23, 63, 53, 0.12);
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.bucketList strong {
+  color: #172018;
+}
+
+.bucketList span {
+  color: #5d695d;
+  font-size: 0.9rem;
 }
 
 .sessionList div {
@@ -394,6 +483,18 @@ button:disabled {
   }
 
   .sessionPanel {
+    grid-column: 1;
+    grid-row: 1;
     grid-template-columns: minmax(0, 1fr) 260px;
+  }
+
+  .quickLogPanel {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .historyPanel {
+    grid-column: 2;
+    grid-row: 1 / span 2;
   }
 }

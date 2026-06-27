@@ -2,9 +2,9 @@
 
 Personal golf chipping tracker for `chip.cashbaggins.dev`.
 
-This repository currently includes the scaffold plus owner PIN auth and manual practice sessions. The app includes a FastAPI backend, a Vite React frontend, Postgres wiring through SQLAlchemy, Alembic migrations, and Docker Compose.
+This repository currently includes the scaffold, owner PIN auth, manual practice sessions, Quick Log, and buckets/partial buckets. The app includes a FastAPI backend, a Vite React frontend, Postgres wiring through SQLAlchemy, Alembic migrations, and Docker Compose.
 
-Quick Log, buckets, Target Completion, analytics, export, and prompt helper are not implemented yet.
+Target Completion, analytics, export, and prompt helper are not implemented yet.
 
 ## Run With Docker
 
@@ -85,11 +85,12 @@ Included:
 - Owner-protected manual session routes
 - Start, stop, abandon, list, view, update, and delete sessions
 - One active session at a time
+- Quick Log for `+42`, `+21`, `+10`, and custom ball counts
+- Explicit no-active-session Quick Log behavior: start session and log, or standalone quick session
+- Bucket/partial bucket persistence and session bucket listing
 - Docker Compose with Postgres and app container
 
 Not included yet:
 
-- Quick Log
-- Buckets
 - Target Completion
 - Analytics, export, prompt helper, or deployment automation

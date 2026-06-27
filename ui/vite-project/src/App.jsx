@@ -61,6 +61,8 @@ function isEarlierDate(value) {
   return new Date(value).toDateString() !== new Date().toDateString();
 }
 
+const QUICK_LOG_COUNTS = [42, 21, 10];
+
 function ObserverPlaceholder() {
   return (
     <main className="shell">
@@ -160,11 +162,156 @@ function SessionStatusPill({ status }) {
   return <span className={`statusPill ${status}`}>{status}</span>;
 }
 
+function QuickLogPanel({ activeSession, buckets, disabled, onQuickLog }) {
+  const [selectedCount, setSelectedCount] = useState(42);
+  const [customCount, setCustomCount] = useState("");
+  const [useCustom, setUseCustom] = useState(false);
+
+  const customBallCount = Number(customCount);
+  const selectedBallCount = useCustom ? customBallCount : selectedCount;
+  const canLog =
+    Number.isInteger(selectedBallCount) && selectedBallCount >= 1 && selectedBallCount <= 500;
+  const recentBuckets = buckets.slice(0, 4);
+
+  function pickCount(count) {
+    setSelectedCount(count);
+    setUseCustom(false);
+  }
+
+  async function logCustom(mode) {
+    if (!canLog) {
+      return;
+    }
+
+    await onQuickLog(selectedBallCount, mode);
+    if (useCustom) {
+      setCustomCount("");
+    }
+  }
+
+  return (
+    <div className="quickLogPanel">
+      <div className="historyHeader">
+        <p className="eyebrow">Quick Log</p>
+      </div>
+
+      {activeSession ? (
+        <div className="quickLogActive">
+          <div className="quickButtons">
+            {QUICK_LOG_COUNTS.map((count) => (
+              <button
+                type="button"
+                key={count}
+                onClick={() => onQuickLog(count, "active")}
+                disabled={disabled}
+              >
+                +{count}
+              </button>
+            ))}
+          </div>
+          <div className="customLogRow">
+            <input
+              aria-label="Custom ball count"
+              inputMode="numeric"
+              min="1"
+              max="500"
+              type="number"
+              value={customCount}
+              onChange={(event) => {
+                setCustomCount(event.target.value);
+                setUseCustom(true);
+              }}
+              placeholder="Custom"
+            />
+            <button
+              className="secondaryButton"
+              type="button"
+              onClick={() => logCustom("active")}
+              disabled={disabled || !canLog || !useCustom}
+            >
+              Log
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="quickLogStandalone">
+          <div className="countPicker" role="group" aria-label="Quick log amount">
+            {QUICK_LOG_COUNTS.map((count) => (
+              <button
+                className={!useCustom && selectedCount === count ? "selected" : ""}
+                type="button"
+                key={count}
+                onClick={() => pickCount(count)}
+                disabled={disabled}
+              >
+                +{count}
+              </button>
+            ))}
+          </div>
+          <input
+            aria-label="Custom ball count"
+            inputMode="numeric"
+            min="1"
+            max="500"
+            type="number"
+            value={customCount}
+            onChange={(event) => {
+              setCustomCount(event.target.value);
+              setUseCustom(true);
+            }}
+            placeholder="Custom"
+          />
+          <div className="quickChoiceGrid">
+            <button
+              type="button"
+              onClick={() => logCustom("start_session")}
+              disabled={disabled || !canLog}
+            >
+              Start Session and Log
+            </button>
+            <button
+              className="secondaryButton"
+              type="button"
+              onClick={() => logCustom("standalone")}
+              disabled={disabled || !canLog}
+            >
+              Log Standalone
+            </button>
+          </div>
+        </div>
+      )}
+
+      {activeSession ? (
+        <div className="bucketListWrap">
+          <p className="eyebrow">Active session logs</p>
+          {recentBuckets.length ? (
+            <ol className="bucketList">
+              {recentBuckets.map((bucket) => (
+                <li key={bucket.id}>
+                  <strong>+{bucket.ball_count}</strong>
+                  <span>
+                    {bucket.club} / {bucket.distance_ft} ft
+                  </span>
+                </li>
+              ))}
+            </ol>
+          ) : (
+            <p className="muted">No balls logged yet.</p>
+          )}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function OwnerSession() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [quickLogBusy, setQuickLogBusy] = useState(false);
   const [error, setError] = useState("");
+  const [quickLogMessage, setQuickLogMessage] = useState("");
   const [activeSession, setActiveSession] = useState(null);
+  const [activeBuckets, setActiveBuckets] = useState([]);
   const [sessions, setSessions] = useState([]);
 
   async function refreshSessions() {
@@ -172,7 +319,10 @@ function OwnerSession() {
       api("/api/sessions/active"),
       api("/api/sessions")
     ]);
+    const buckets = active ? await api(`/api/sessions/${active.id}/buckets`) : [];
+
     setActiveSession(active);
+    setActiveBuckets(buckets);
     setSessions(history);
   }
 
@@ -211,6 +361,7 @@ function OwnerSession() {
   async function startSession() {
     setBusy(true);
     setError("");
+    setQuickLogMessage("");
 
     try {
       const session = await api("/api/sessions/start", {
@@ -237,6 +388,7 @@ function OwnerSession() {
 
     setBusy(true);
     setError("");
+    setQuickLogMessage("");
 
     try {
       await api(`/api/sessions/${activeSession.id}/stop`, { method: "POST" });
@@ -256,6 +408,7 @@ function OwnerSession() {
 
     setBusy(true);
     setError("");
+    setQuickLogMessage("");
 
     try {
       await api(`/api/sessions/${activeSession.id}/abandon`, { method: "POST" });
@@ -273,7 +426,33 @@ function OwnerSession() {
     window.location.href = "/";
   }
 
+  async function quickLog(ballCount, mode) {
+    setQuickLogBusy(true);
+    setError("");
+    setQuickLogMessage("");
+
+    try {
+      const result = await api("/api/quick-log", {
+        method: "POST",
+        body: JSON.stringify({
+          ball_count: ballCount,
+          mode
+        })
+      });
+      await refreshSessions();
+      if (result.session.status === "active") {
+        window.history.replaceState({}, "", "/me/session/active");
+      }
+      setQuickLogMessage(`Logged +${result.bucket.ball_count}`);
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setQuickLogBusy(false);
+    }
+  }
+
   const activeFromEarlier = isEarlierDate(activeSession?.started_at);
+  const activeBallTotal = activeBuckets.reduce((total, bucket) => total + bucket.ball_count, 0);
 
   return (
     <main className="shell">
@@ -318,6 +497,10 @@ function OwnerSession() {
                     {activeSession.default_club} / {activeSession.default_distance_ft} ft
                   </strong>
                 </div>
+                <div>
+                  <span>Balls logged</span>
+                  <strong>{activeBallTotal}</strong>
+                </div>
               </div>
             ) : (
               <p>Start a manual practice block before logging balls.</p>
@@ -350,6 +533,13 @@ function OwnerSession() {
           </div>
         </div>
 
+        <QuickLogPanel
+          activeSession={activeSession}
+          buckets={activeBuckets}
+          disabled={loading || busy || quickLogBusy}
+          onQuickLog={quickLog}
+        />
+
         <div className="historyPanel">
           <div className="historyHeader">
             <p className="eyebrow">Recent sessions</p>
@@ -374,6 +564,7 @@ function OwnerSession() {
         </div>
       </section>
 
+      {quickLogMessage ? <p className="successMessage">{quickLogMessage}</p> : null}
       {error ? <p className="pageError">{error}</p> : null}
     </main>
   );
