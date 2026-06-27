@@ -8,6 +8,9 @@ class Settings(BaseSettings):
     database_url: str = "postgresql+asyncpg://chipping:chipping@localhost:5432/chipping"
     cors_origins: str = "http://localhost:5173,http://localhost:8000"
     static_dir: str | None = None
+    app_git_sha: str | None = None
+    app_build_version: str | None = None
+    design_version: str = "v1-dashboard-polish"
     owner_pin: str | None = None
     owner_password: str | None = None
     jwt_secret: str | None = None

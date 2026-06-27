@@ -1,5 +1,7 @@
 from fastapi.testclient import TestClient
 
+from app.config import get_settings
+
 
 def _login(client: TestClient) -> None:
     response = client.post("/api/auth/owner-login", json={"pin": "1234"})
@@ -78,6 +80,25 @@ def test_quick_log_can_create_standalone_completed_session(session_client):
     assert quick_log_response.json()["bucket"]["distance_ft"] == 20
     assert active_response.status_code == 200
     assert active_response.json() is None
+
+
+def test_quick_log_created_session_stores_build_provenance(session_client, monkeypatch):
+    monkeypatch.setenv("APP_GIT_SHA", "feedface12345678")
+    monkeypatch.setenv("APP_BUILD_VERSION", "feedface")
+    monkeypatch.setenv("DESIGN_VERSION", "v1-dashboard-polish")
+    get_settings.cache_clear()
+    _login(session_client)
+
+    quick_log_response = session_client.post(
+        "/api/quick-log",
+        json={"ball_count": 10, "mode": "standalone"},
+    )
+    session = quick_log_response.json()["session"]
+
+    assert quick_log_response.status_code == 201
+    assert session["app_git_sha"] == "feedface12345678"
+    assert session["app_build_version"] == "feedface"
+    assert session["design_version"] == "v1-dashboard-polish"
 
 
 def test_quick_log_rejects_invalid_ball_count(session_client):

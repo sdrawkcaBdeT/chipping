@@ -57,6 +57,7 @@ Optional:
 
 - `SESSION_DAYS`, default `30`
 - `COOKIE_SECURE`, default `false`
+- `APP_GIT_SHA`, `APP_BUILD_VERSION`, and `DESIGN_VERSION` for session provenance
 
 ## Database Migrations
 

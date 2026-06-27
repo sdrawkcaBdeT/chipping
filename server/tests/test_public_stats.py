@@ -1,5 +1,7 @@
 from fastapi.testclient import TestClient
 
+from app.config import get_settings
+
 
 def _login(client: TestClient) -> None:
     response = client.post("/api/auth/owner-login", json={"pin": "1234"})
@@ -98,11 +100,31 @@ def test_public_session_detail_returns_session_games_and_buckets(session_client)
     assert detail["games"][0]["score"] == 10
     assert detail["games"][0]["completed_target_count"] == 9
     assert detail["games"][0]["targets"][0]["attempts"] == 2
-    assert detail["provenance"]["design_version"] == "v0-manual-tracker"
+    assert detail["provenance"]["design_version"] == "v1-dashboard-polish"
     assert detail["provenance"]["app_git_sha"] is None
+    assert detail["provenance"]["app_build_version"] is None
+    assert detail["provenance"]["code_url"] is None
 
 
 def test_public_session_detail_returns_404_for_missing_session(session_client):
     response = session_client.get("/api/public/sessions/not-a-session")
 
     assert response.status_code == 404
+
+
+def test_public_build_returns_current_build_provenance(session_client, monkeypatch):
+    monkeypatch.setenv("APP_GIT_SHA", "1234567890abcdef")
+    monkeypatch.setenv("APP_BUILD_VERSION", "build-local")
+    monkeypatch.setenv("DESIGN_VERSION", "v1-dashboard-polish")
+
+    get_settings.cache_clear()
+
+    response = session_client.get("/api/public/build")
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "app_git_sha": "1234567890abcdef",
+        "app_build_version": "build-local",
+        "design_version": "v1-dashboard-polish",
+        "code_url": "https://github.com/sdrawkcaBdeT/chipping/tree/1234567890abcdef",
+    }

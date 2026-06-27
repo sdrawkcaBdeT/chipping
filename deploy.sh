@@ -10,6 +10,31 @@ cd "$NAS_SHARE"
 git fetch origin
 git reset --hard origin/main
 
+if [[ ! -f .env ]]; then
+  echo "Missing $NAS_SHARE/.env; refusing to deploy without production secrets." >&2
+  exit 1
+fi
+
+APP_GIT_SHA="$(git rev-parse HEAD)"
+APP_BUILD_VERSION="$(git rev-parse --short HEAD)"
+DESIGN_VERSION="v1-dashboard-polish"
+
+upsert_env() {
+  local key="$1"
+  local value="$2"
+  local file=".env"
+
+  if grep -q "^${key}=" "$file"; then
+    sed -i "s|^${key}=.*|${key}=${value}|" "$file"
+  else
+    printf "\n%s=%s\n" "$key" "$value" >> "$file"
+  fi
+}
+
+upsert_env "APP_GIT_SHA" "$APP_GIT_SHA"
+upsert_env "APP_BUILD_VERSION" "$APP_BUILD_VERSION"
+upsert_env "DESIGN_VERSION" "$DESIGN_VERSION"
+
 # UGREEN's Docker app points at docker-compose.yaml, while the repo tracks
 # docker-compose.yml. Keep the NAS-facing copy in sync on every deploy.
 cp docker-compose.yml "$NAS_COMPOSE_FILE"

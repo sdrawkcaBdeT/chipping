@@ -924,6 +924,21 @@ button:disabled {
   text-decoration: none;
 }
 
+.siteNav .buildLink {
+  display: inline-flex;
+  min-height: 30px;
+  align-items: center;
+  border: 1px solid rgba(49, 80, 91, 0.16);
+  border-radius: 999px;
+  padding: 0 10px;
+  background: rgba(255, 254, 250, 0.72);
+  color: var(--steel);
+  font-family: var(--font-display);
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
 .dashboardHero,
 .sessionHero {
   display: grid;
@@ -1308,6 +1323,14 @@ button:disabled {
   border: 1px solid var(--line);
   border-radius: 8px;
   background: #f8f7ef;
+}
+
+.provenanceReadout a {
+  color: var(--pine);
+  font-size: 0.92rem;
+  font-weight: 800;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
 }
 
 .provenanceReadout span {

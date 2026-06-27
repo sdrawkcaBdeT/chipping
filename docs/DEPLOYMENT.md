@@ -59,6 +59,16 @@ The local deploy script mirrors the BID workflow:
 
 It runs from the local machine, updates the NAS-mounted repo at `/z/chipping` from GitHub `main`, copies the tracked `docker-compose.yml` to `docker-compose.yaml` for the UGREEN Docker project, then SSHes into the NAS to rebuild/start the Compose stack.
 
+The script also writes the current deploy commit into the NAS `.env`:
+
+```env
+APP_GIT_SHA=<full commit sha>
+APP_BUILD_VERSION=<short commit sha>
+DESIGN_VERSION=v1-dashboard-polish
+```
+
+New practice sessions snapshot those values so public session detail pages can link to the code that was live when the session was recorded.
+
 ## Build And Start With CLI
 
 If managing the stack over SSH instead of the UGREEN Docker UI, run from the repository root on the server:

@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.buckets import BucketResponse
 from app.api.sessions import SessionResponse
+from app.config import get_settings
 from app.database import get_db
 from app.models import PracticeBucket, PracticeSession
 from app.models.session import utc_now
@@ -63,6 +64,23 @@ def _completed_quick_log_bucket(
     )
 
 
+def _clean_optional_value(value: str | None) -> str | None:
+    if value is None:
+        return None
+    clean_value = value.strip()
+    return clean_value or None
+
+
+def _session_provenance() -> dict[str, str | None]:
+    settings = get_settings()
+    return {
+        "app_git_sha": _clean_optional_value(settings.app_git_sha),
+        "app_build_version": _clean_optional_value(settings.app_build_version),
+        "design_version": _clean_optional_value(settings.design_version)
+        or "v1-dashboard-polish",
+    }
+
+
 @router.post("/quick-log", response_model=QuickLogResponse, status_code=status.HTTP_201_CREATED)
 async def quick_log(
     payload: QuickLogRequest,
@@ -87,6 +105,7 @@ async def quick_log(
                 started_at=now,
                 created_at=now,
                 updated_at=now,
+                **_session_provenance(),
             )
             active_session_created = True
         else:
@@ -98,6 +117,7 @@ async def quick_log(
                 default_distance_ft=payload.distance_ft,
                 created_at=now,
                 updated_at=now,
+                **_session_provenance(),
             )
             standalone_session_created = True
 

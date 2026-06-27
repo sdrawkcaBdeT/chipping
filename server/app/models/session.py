@@ -31,6 +31,13 @@ class PracticeSession(Base):
     default_club: Mapped[str] = mapped_column(String(64), default="56", nullable=False)
     default_distance_ft: Mapped[int] = mapped_column(Integer, default=15, nullable=False)
     notes: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    app_git_sha: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    app_build_version: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    design_version: Mapped[str] = mapped_column(
+        String(64),
+        default="v1-dashboard-polish",
+        nullable=False,
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),

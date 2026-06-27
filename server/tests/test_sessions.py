@@ -1,5 +1,7 @@
 from fastapi.testclient import TestClient
 
+from app.config import get_settings
+
 
 def _login(client: TestClient) -> None:
     response = client.post("/api/auth/owner-login", json={"pin": "1234"})
@@ -27,6 +29,31 @@ def test_owner_can_start_and_stop_session(session_client):
     assert stop_response.status_code == 200
     assert stop_response.json()["status"] == "completed"
     assert stop_response.json()["ended_at"] is not None
+
+
+def test_session_start_stores_build_provenance(session_client, monkeypatch):
+    monkeypatch.setenv("APP_GIT_SHA", "abcdef1234567890")
+    monkeypatch.setenv("APP_BUILD_VERSION", "build-2026-06-27")
+    monkeypatch.setenv("DESIGN_VERSION", "v1-dashboard-polish")
+    get_settings.cache_clear()
+    _login(session_client)
+
+    start_response = session_client.post("/api/sessions/start", json={})
+    session = start_response.json()
+    detail_response = session_client.get(f"/api/public/sessions/{session['id']}")
+    provenance = detail_response.json()["provenance"]
+
+    assert start_response.status_code == 201
+    assert session["app_git_sha"] == "abcdef1234567890"
+    assert session["app_build_version"] == "build-2026-06-27"
+    assert session["design_version"] == "v1-dashboard-polish"
+    assert detail_response.status_code == 200
+    assert provenance == {
+        "design_version": "v1-dashboard-polish",
+        "app_git_sha": "abcdef1234567890",
+        "app_build_version": "build-2026-06-27",
+        "code_url": "https://github.com/sdrawkcaBdeT/chipping/tree/abcdef1234567890",
+    }
 
 
 def test_only_one_active_session_is_allowed(session_client):

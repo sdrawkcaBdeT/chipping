@@ -20,6 +20,9 @@ def session_client(monkeypatch, tmp_path):
     monkeypatch.setenv("OWNER_PIN", "1234")
     monkeypatch.setenv("JWT_SECRET", "test-secret")
     monkeypatch.setenv("COOKIE_SECURE", "false")
+    monkeypatch.delenv("APP_GIT_SHA", raising=False)
+    monkeypatch.delenv("APP_BUILD_VERSION", raising=False)
+    monkeypatch.delenv("DESIGN_VERSION", raising=False)
     get_settings.cache_clear()
     reset_database_caches()
 

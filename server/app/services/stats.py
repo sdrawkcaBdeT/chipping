@@ -63,6 +63,12 @@ def _datetime_key(value: datetime) -> datetime:
     return value.replace(tzinfo=None)
 
 
+def _github_code_url(app_git_sha: str | None) -> str | None:
+    if not app_git_sha:
+        return None
+    return f"https://github.com/sdrawkcaBdeT/chipping/tree/{app_git_sha}"
+
+
 async def load_practice_data(db: AsyncSession) -> dict[str, list[Any]]:
     sessions_result = await db.execute(
         select(PracticeSession).order_by(PracticeSession.started_at.desc(), PracticeSession.id)
@@ -143,6 +149,7 @@ def build_summary(data: dict[str, list[Any]]) -> dict[str, Any]:
             "game_count": len(games_by_session[session.id]),
             "default_club": session.default_club,
             "default_distance_ft": session.default_distance_ft,
+            "design_version": session.design_version,
         }
         for session in sessions
     ]
@@ -412,8 +419,10 @@ def build_session_detail(data: dict[str, list[Any]], session_id: str) -> dict[st
         "games": games_payload,
         "source_totals": dict(sorted(source_totals.items())),
         "provenance": {
-            "design_version": "v0-manual-tracker",
-            "app_git_sha": None,
+            "design_version": session.design_version,
+            "app_git_sha": session.app_git_sha,
+            "app_build_version": session.app_build_version,
+            "code_url": _github_code_url(session.app_git_sha),
         },
     }
 
@@ -431,6 +440,9 @@ def build_export_payload(data: dict[str, list[Any]], summary: dict[str, Any]) ->
                 "default_club": session.default_club,
                 "default_distance_ft": session.default_distance_ft,
                 "notes": session.notes,
+                "app_git_sha": session.app_git_sha,
+                "app_build_version": session.app_build_version,
+                "design_version": session.design_version,
                 "created_at": _iso(session.created_at),
                 "updated_at": _iso(session.updated_at),
             }

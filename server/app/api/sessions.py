@@ -6,6 +6,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import get_settings
 from app.database import get_db
 from app.models import GameRun, PracticeBucket, PracticeSession
 from app.models.session import utc_now
@@ -40,6 +41,9 @@ class SessionResponse(BaseModel):
     default_club: str
     default_distance_ft: int
     notes: str
+    app_git_sha: str | None
+    app_build_version: str | None
+    design_version: str
     created_at: datetime
     updated_at: datetime
 
@@ -61,6 +65,13 @@ async def _session_or_404(session_id: str, db: AsyncSession) -> PracticeSession:
     if session is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
     return session
+
+
+def _clean_optional_value(value: str | None) -> str | None:
+    if value is None:
+        return None
+    clean_value = value.strip()
+    return clean_value or None
 
 
 async def _close_active_session_work(
@@ -100,10 +111,14 @@ async def start_session(
             detail="An active session already exists",
         )
 
+    settings = get_settings()
     practice_session = PracticeSession(
         default_club=payload.default_club,
         default_distance_ft=payload.default_distance_ft,
         notes=payload.notes,
+        app_git_sha=_clean_optional_value(settings.app_git_sha),
+        app_build_version=_clean_optional_value(settings.app_build_version),
+        design_version=_clean_optional_value(settings.design_version) or "v1-dashboard-polish",
     )
     db.add(practice_session)
     await db.commit()

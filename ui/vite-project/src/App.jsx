@@ -59,6 +59,14 @@ function formatMaybeNumber(value) {
   return formatNumber(value);
 }
 
+function shortSha(value) {
+  if (!value) {
+    return "";
+  }
+
+  return value.slice(0, 7);
+}
+
 function formatPercent(value) {
   if (value === null || value === undefined) {
     return "n/a";
@@ -279,17 +287,18 @@ function ObserverDashboard() {
       setError("");
 
       try {
-        const [overview, volume, accuracy, targets, completion, sessions] = await Promise.all([
+        const [overview, volume, accuracy, targets, completion, sessions, build] = await Promise.all([
           api("/api/public/overview"),
           api("/api/public/volume"),
           api("/api/public/accuracy"),
           api("/api/public/targets"),
           api("/api/public/completion"),
-          api("/api/public/sessions")
+          api("/api/public/sessions"),
+          api("/api/public/build")
         ]);
 
         if (!ignore) {
-          setStats({ overview, volume, accuracy, targets, completion, sessions });
+          setStats({ overview, volume, accuracy, targets, completion, sessions, build });
         }
       } catch (error) {
         if (!ignore) {
@@ -317,6 +326,7 @@ function ObserverDashboard() {
   const completionRuns = stats?.completion?.completed_runs || [];
   const recentSessions = stats?.sessions?.sessions || [];
   const sourceTotals = Object.entries(volume?.source_totals || {});
+  const build = stats?.build;
 
   return (
     <main className="shell dashboardShell">
@@ -328,6 +338,11 @@ function ObserverDashboard() {
         <div className="siteNav">
           <a href="#sessions">Sessions</a>
           <a href="#targets">Targets</a>
+          {build?.code_url ? (
+            <a className="buildLink" href={build.code_url} rel="noreferrer" target="_blank">
+              Build {shortSha(build.app_git_sha)}
+            </a>
+          ) : null}
           <a className="primaryAction" href="/me/login">
             Log Practice
           </a>
@@ -638,11 +653,24 @@ function SessionDetail() {
               <div className="provenanceReadout">
                 <div>
                   <span>App commit</span>
-                  <strong>{detail.provenance.app_git_sha || "not captured yet"}</strong>
+                  <strong>
+                    {detail.provenance.app_git_sha
+                      ? shortSha(detail.provenance.app_git_sha)
+                      : "not captured yet"}
+                  </strong>
+                  {detail.provenance.code_url ? (
+                    <a href={detail.provenance.code_url} rel="noreferrer" target="_blank">
+                      View code at time of session
+                    </a>
+                  ) : null}
                 </div>
                 <div>
                   <span>Presentation era</span>
-                  <strong>Manual tracker V0</strong>
+                  <strong>{detail.provenance.design_version}</strong>
+                </div>
+                <div>
+                  <span>Build version</span>
+                  <strong>{detail.provenance.app_build_version || "not captured yet"}</strong>
                 </div>
               </div>
             </article>
