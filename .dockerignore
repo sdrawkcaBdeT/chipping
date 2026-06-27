@@ -1,0 +1,9 @@
+.git
+.env
+.venv
+__pycache__
+.pytest_cache
+node_modules
+.npm-cache
+ui/vite-project/node_modules
+ui/vite-project/dist
