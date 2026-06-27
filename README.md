@@ -4,7 +4,7 @@ Personal golf chipping tracker for `chip.cashbaggins.dev`.
 
 This repository includes the V0 app: owner PIN auth, manual practice sessions, Quick Log, buckets/partial buckets, Target Completion 1-9, observer stats, export, a prompt helper, and the NAS/Cloudflare deployment pattern. The app includes a FastAPI backend, a Vite React frontend, Postgres wiring through SQLAlchemy, Alembic migrations, and Docker Compose.
 
-Current implementation status is tracked in `docs/IMPLEMENTATION.md`. Deployment notes are in `docs/DEPLOYMENT.md`.
+Current implementation status is tracked in `docs/IMPLEMENTATION.md`. The working roadmap is in `docs/ROADMAP.md`. Deployment notes are in `docs/DEPLOYMENT.md`.
 
 ## Run With Docker
 
