@@ -35,6 +35,45 @@ function formatDateTime(value) {
   }).format(new Date(value));
 }
 
+function formatDateOnly(value) {
+  if (!value) {
+    return "";
+  }
+
+  return new Intl.DateTimeFormat(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric"
+  }).format(new Date(value));
+}
+
+function formatNumber(value) {
+  return new Intl.NumberFormat().format(value || 0);
+}
+
+function formatPercent(value) {
+  if (value === null || value === undefined) {
+    return "n/a";
+  }
+
+  return `${Math.round(value * 100)}%`;
+}
+
+function formatDurationSeconds(value) {
+  if (!value) {
+    return "0 min";
+  }
+
+  const minutes = Math.max(0, Math.round(value / 60));
+  if (minutes < 60) {
+    return `${minutes} min`;
+  }
+
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = minutes % 60;
+  return `${hours}h ${remainingMinutes}m`;
+}
+
 function sessionDuration(session) {
   if (!session) {
     return "";
@@ -63,7 +102,69 @@ function isEarlierDate(value) {
 
 const QUICK_LOG_COUNTS = [42, 21, 10];
 
-function ObserverPlaceholder() {
+function StatCard({ label, value, detail }) {
+  return (
+    <div className="statCard">
+      <span>{label}</span>
+      <strong>{value}</strong>
+      {detail ? <small>{detail}</small> : null}
+    </div>
+  );
+}
+
+function ObserverDashboard() {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [stats, setStats] = useState(null);
+
+  useEffect(() => {
+    let ignore = false;
+
+    async function loadStats() {
+      setLoading(true);
+      setError("");
+
+      try {
+        const [overview, volume, accuracy, targets, completion, sessions] = await Promise.all([
+          api("/api/public/overview"),
+          api("/api/public/volume"),
+          api("/api/public/accuracy"),
+          api("/api/public/targets"),
+          api("/api/public/completion"),
+          api("/api/public/sessions")
+        ]);
+
+        if (!ignore) {
+          setStats({ overview, volume, accuracy, targets, completion, sessions });
+        }
+      } catch (error) {
+        if (!ignore) {
+          setError(error.message);
+        }
+      } finally {
+        if (!ignore) {
+          setLoading(false);
+        }
+      }
+    }
+
+    loadStats();
+    return () => {
+      ignore = true;
+    };
+  }, []);
+
+  const overview = stats?.overview;
+  const volume = stats?.volume;
+  const accuracy = stats?.accuracy;
+  const targets = stats?.targets?.targets || [];
+  const completionRuns = stats?.completion?.completed_runs || [];
+  const recentSessions = stats?.sessions?.sessions || [];
+  const topWeakTargets = [...targets]
+    .filter((target) => target.attempts > 0)
+    .sort((a, b) => (b.average_balls_to_hit || 0) - (a.average_balls_to_hit || 0))
+    .slice(0, 3);
+
   return (
     <main className="shell">
       <header className="topbar">
@@ -76,23 +177,112 @@ function ObserverPlaceholder() {
         </a>
       </header>
 
-      <section className="panel">
-        <div className="panelText">
-          <p className="eyebrow">Read-only dashboard</p>
-          <h2>Practice summary coming online.</h2>
-          <p>
-            Public chipping stats will land here as sessions, logs, and target games are
-            added.
-          </p>
-        </div>
-        <div className="targetPreview" aria-hidden="true">
-          <span className="target targetOne" />
-          <span className="target targetTwo" />
-          <span className="target targetThree" />
-          <span className="target targetFour" />
-          <span className="target targetFive" />
-        </div>
-      </section>
+      {loading ? <p className="muted">Loading...</p> : null}
+      {error ? <p className="pageError">{error}</p> : null}
+
+      {overview ? (
+        <section className="observerGrid">
+          <div className="observerHero">
+            <div>
+              <p className="eyebrow">Read-only dashboard</p>
+              <h2>{formatNumber(overview.total_balls)} balls tracked</h2>
+            </div>
+            <div className="statGrid">
+              <StatCard label="Sessions" value={formatNumber(overview.total_sessions)} />
+              <StatCard label="Buckets" value={formatNumber(overview.bucket_count)} />
+              <StatCard
+                label="Best 1-9"
+                value={overview.best_completion_score ?? "n/a"}
+                detail="balls"
+              />
+              <StatCard label="Hit rate" value={formatPercent(accuracy?.hit_rate)} />
+            </div>
+          </div>
+
+          <div className="readoutPanel">
+            <div className="historyHeader">
+              <p className="eyebrow">Volume</p>
+            </div>
+            <div className="sourceTotals">
+              {Object.entries(volume?.source_totals || {}).map(([source, total]) => (
+                <div key={source}>
+                  <span>{source.replace("_", " ")}</span>
+                  <strong>{formatNumber(total)}</strong>
+                </div>
+              ))}
+            </div>
+            <ol className="compactList">
+              {(volume?.daily || []).slice(0, 5).map((day) => (
+                <li key={day.date}>
+                  <strong>{formatDateOnly(day.date)}</strong>
+                  <span>{formatNumber(day.balls)} balls</span>
+                </li>
+              ))}
+            </ol>
+          </div>
+
+          <div className="readoutPanel">
+            <div className="historyHeader">
+              <p className="eyebrow">Target Completion</p>
+            </div>
+            <div className="scoreLine">
+              <strong>{stats.completion.best_score ?? "n/a"}</strong>
+              <span>best score</span>
+            </div>
+            <ol className="compactList">
+              {completionRuns.slice(0, 5).map((run) => (
+                <li key={run.id}>
+                  <strong>{run.score} balls</strong>
+                  <span>{run.variant}</span>
+                </li>
+              ))}
+            </ol>
+          </div>
+
+          <div className="readoutPanel wideReadout">
+            <div className="historyHeader">
+              <p className="eyebrow">Targets</p>
+            </div>
+            <ol className="targetStatGrid">
+              {targets.map((target) => (
+                <li key={target.target_number}>
+                  <strong>{target.target_number}</strong>
+                  <span>{target.average_balls_to_hit ?? "n/a"}</span>
+                </li>
+              ))}
+            </ol>
+            {topWeakTargets.length ? (
+              <div className="weakTargetRow">
+                {topWeakTargets.map((target) => (
+                  <span key={target.target_number}>
+                    T{target.target_number}: {target.average_balls_to_hit}
+                  </span>
+                ))}
+              </div>
+            ) : null}
+          </div>
+
+          <div className="readoutPanel wideReadout">
+            <div className="historyHeader">
+              <p className="eyebrow">Sessions</p>
+            </div>
+            <ol className="sessionList observerSessions">
+              {recentSessions.slice(0, 6).map((session) => (
+                <li key={session.id}>
+                  <div>
+                    <strong>{formatDateTime(session.started_at)}</strong>
+                    <span>
+                      {formatNumber(session.ball_count)} balls /{" "}
+                      {formatDurationSeconds(session.duration_seconds)}
+                    </span>
+                  </div>
+                  <SessionStatusPill status={session.status} />
+                </li>
+              ))}
+            </ol>
+          </div>
+        </section>
+      ) : null}
     </main>
   );
 }
@@ -428,6 +618,49 @@ function TargetCompletionPanel({
           Stop Game
         </button>
       </div>
+    </div>
+  );
+}
+
+function OwnerToolsPanel() {
+  const [prompt, setPrompt] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  async function loadPrompt() {
+    setBusy(true);
+    setError("");
+
+    try {
+      const response = await api("/api/prompts/practice-summary");
+      setPrompt(response.prompt);
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="ownerToolsPanel">
+      <div className="historyHeader">
+        <p className="eyebrow">Output</p>
+      </div>
+      <div className="exportGrid">
+        <a className="secondaryAction" href="/api/export/json">
+          Export JSON
+        </a>
+        <a className="secondaryAction" href="/api/export/csv">
+          Export CSV
+        </a>
+      </div>
+      <button className="secondaryButton" type="button" onClick={loadPrompt} disabled={busy}>
+        {busy ? "Building..." : "Prompt Helper"}
+      </button>
+      {error ? <p className="formError">{error}</p> : null}
+      {prompt ? (
+        <textarea className="promptBox" readOnly value={prompt} aria-label="Prompt helper" />
+      ) : null}
     </div>
   );
 }
@@ -793,6 +1026,8 @@ function OwnerSession() {
             <p className="muted">No sessions yet.</p>
           )}
         </div>
+
+        <OwnerToolsPanel />
       </section>
 
       {quickLogMessage ? <p className="successMessage">{quickLogMessage}</p> : null}
@@ -816,5 +1051,5 @@ export default function App() {
     return <OwnerSession />;
   }
 
-  return <ObserverPlaceholder />;
+  return <ObserverDashboard />;
 }
