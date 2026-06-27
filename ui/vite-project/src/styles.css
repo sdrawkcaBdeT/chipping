@@ -994,6 +994,56 @@ button:disabled {
   gap: 18px;
 }
 
+.dashboardControls {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 14px;
+}
+
+.segmentedBlock {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.segmentedBlock > span {
+  color: var(--muted-ink);
+  font-family: var(--font-display);
+  font-size: 0.76rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.segmentedControl {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 4px;
+  background: rgba(255, 254, 250, 0.78);
+}
+
+.segmentedControl button {
+  min-height: 34px;
+  border-radius: 6px;
+  padding: 0 10px;
+  background: transparent;
+  color: var(--muted-ink);
+  font-family: var(--font-display);
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.segmentedControl button.active {
+  background: #173f35;
+  color: #ffffff;
+  box-shadow: 0 7px 18px rgba(23, 63, 53, 0.18);
+}
+
 .dataPanel,
 .sessionShowcase {
   display: grid;
@@ -1144,6 +1194,132 @@ button:disabled {
 .heroScore strong {
   font-size: clamp(3rem, 16vw, 6rem);
   line-height: 0.86;
+}
+
+.netMapWrap {
+  display: grid;
+  gap: 10px;
+}
+
+.netMap {
+  display: block;
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(255, 254, 250, 0.88), rgba(248, 247, 239, 0.9)),
+    #f8f7ef;
+}
+
+.netMap pattern path {
+  stroke: #6f6249;
+  stroke-width: 0.42;
+  opacity: 0.45;
+}
+
+.netBody {
+  fill: #111312;
+}
+
+.netInnerRim {
+  fill: url(#netMesh);
+  stroke: #292c2b;
+  stroke-width: 2.2;
+  opacity: 0.74;
+}
+
+.netStrand {
+  fill: none;
+  stroke: #2f3431;
+  stroke-width: 0.34;
+  opacity: 0.58;
+}
+
+.netBase {
+  fill: none;
+  stroke: #161716;
+  stroke-linecap: round;
+  stroke-width: 1.1;
+  opacity: 0.68;
+}
+
+.netTarget {
+  --target-color: var(--signal);
+}
+
+.netTargetShadow {
+  fill: #050606;
+  opacity: 0.56;
+}
+
+.netTargetRing {
+  fill: #e8decb;
+  stroke: var(--target-color);
+  stroke-width: 1.45;
+}
+
+.netTargetMesh {
+  fill: url(#netMesh);
+  opacity: 0.58;
+}
+
+.netTargetValue,
+.netTargetSubvalue,
+.netTargetNumber {
+  font-family: var(--font-numeric);
+  font-weight: 800;
+  pointer-events: none;
+}
+
+.netTargetValue {
+  fill: #172018;
+  font-size: 3.1px;
+}
+
+.netTargetSubvalue {
+  fill: #69746d;
+  font-size: 1.7px;
+  text-transform: uppercase;
+}
+
+.netTargetNumber {
+  fill: #f5db4b;
+  font-size: 4.8px;
+  paint-order: stroke;
+  stroke: rgba(5, 6, 6, 0.34);
+  stroke-width: 0.45;
+}
+
+.netTargetGroup.hard .netTargetValue {
+  fill: #8a2525;
+}
+
+.netTargetGroup.sharp .netTargetValue {
+  fill: #1d6041;
+}
+
+.netTargetGroup.hard .netTargetRing,
+.netTargetGroup.sharp .netTargetRing {
+  stroke-width: 1.85;
+}
+
+.netTargetGroup.lowSample .netTarget {
+  opacity: 0.72;
+}
+
+.netTargetGroup.noData .netTarget {
+  opacity: 0.58;
+}
+
+.netMapReadout {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--muted-ink);
+  font-size: 0.8rem;
+  font-weight: 800;
+  text-transform: uppercase;
 }
 
 .targetMap,

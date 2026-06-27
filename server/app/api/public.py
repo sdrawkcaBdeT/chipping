@@ -1,15 +1,15 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import get_settings
 from app.database import get_db
-from app.services.stats import build_session_detail, build_summary, load_practice_data
+from app.services.stats import StatsRange, build_session_detail, build_summary, load_practice_data
 
 router = APIRouter(prefix="/public", tags=["public"])
 
 
-async def _summary(db: AsyncSession) -> dict:
-    return build_summary(await load_practice_data(db))
+async def _summary(db: AsyncSession, stats_range: StatsRange) -> dict:
+    return build_summary(await load_practice_data(db), stats_range)
 
 
 def _clean_optional_value(value: str | None) -> str | None:
@@ -36,38 +36,56 @@ async def public_build() -> dict:
 
 
 @router.get("/overview")
-async def public_overview(db: AsyncSession = Depends(get_db)) -> dict:
-    summary = await _summary(db)
+async def public_overview(
+    stats_range: StatsRange = Query("all", alias="range"),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    summary = await _summary(db, stats_range)
     return summary["overview"]
 
 
 @router.get("/volume")
-async def public_volume(db: AsyncSession = Depends(get_db)) -> dict:
-    summary = await _summary(db)
+async def public_volume(
+    stats_range: StatsRange = Query("all", alias="range"),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    summary = await _summary(db, stats_range)
     return summary["volume"]
 
 
 @router.get("/accuracy")
-async def public_accuracy(db: AsyncSession = Depends(get_db)) -> dict:
-    summary = await _summary(db)
+async def public_accuracy(
+    stats_range: StatsRange = Query("all", alias="range"),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    summary = await _summary(db, stats_range)
     return summary["accuracy"]
 
 
 @router.get("/targets")
-async def public_targets(db: AsyncSession = Depends(get_db)) -> dict:
-    summary = await _summary(db)
+async def public_targets(
+    stats_range: StatsRange = Query("all", alias="range"),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    summary = await _summary(db, stats_range)
     return summary["targets"]
 
 
 @router.get("/completion")
-async def public_completion(db: AsyncSession = Depends(get_db)) -> dict:
-    summary = await _summary(db)
+async def public_completion(
+    stats_range: StatsRange = Query("all", alias="range"),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    summary = await _summary(db, stats_range)
     return summary["completion"]
 
 
 @router.get("/sessions")
-async def public_sessions(db: AsyncSession = Depends(get_db)) -> dict:
-    summary = await _summary(db)
+async def public_sessions(
+    stats_range: StatsRange = Query("all", alias="range"),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    summary = await _summary(db, stats_range)
     return summary["sessions"]
 
 

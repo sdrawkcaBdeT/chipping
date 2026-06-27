@@ -1,0 +1,86 @@
+{
+  "coordinate_system": "x/y are percent positions inside the visual net; r is percent of the minimum net dimension; num_dx/num_dy offset number labels by target radii",
+  "targets": [
+    {
+      "id": 1,
+      "x": 50,
+      "y": 18,
+      "r": 7.7,
+      "color": "#f3d21b",
+      "num_dx": 0,
+      "num_dy": -1.48
+    },
+    {
+      "id": 3,
+      "x": 28,
+      "y": 34,
+      "r": 7,
+      "color": "#df3730",
+      "num_dx": -1.35,
+      "num_dy": -1
+    },
+    {
+      "id": 8,
+      "x": 72,
+      "y": 34,
+      "r": 7,
+      "color": "#bdb8aa",
+      "num_dx": 1.35,
+      "num_dy": -1
+    },
+    {
+      "id": 5,
+      "x": 20,
+      "y": 53,
+      "r": 7.4,
+      "color": "#ff7a00",
+      "num_dx": -1.45,
+      "num_dy": -0.35
+    },
+    {
+      "id": 9,
+      "x": 50,
+      "y": 53,
+      "r": 11.2,
+      "color": "#ffffff",
+      "num_dx": -1.35,
+      "num_dy": 0
+    },
+    {
+      "id": 6,
+      "x": 80,
+      "y": 53,
+      "r": 7.4,
+      "color": "#27b95b",
+      "num_dx": 1.45,
+      "num_dy": -0.35
+    },
+    {
+      "id": 7,
+      "x": 32,
+      "y": 72,
+      "r": 7,
+      "color": "#7d1f24",
+      "num_dx": -1.35,
+      "num_dy": 0.85
+    },
+    {
+      "id": 4,
+      "x": 70,
+      "y": 72,
+      "r": 7,
+      "color": "#663057",
+      "num_dx": 1.35,
+      "num_dy": 0.85
+    },
+    {
+      "id": 2,
+      "x": 50,
+      "y": 84,
+      "r": 7.4,
+      "color": "#2467c8",
+      "num_dx": 0,
+      "num_dy": 1.55
+    }
+  ]
+}

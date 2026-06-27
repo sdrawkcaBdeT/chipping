@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections import defaultdict
 from datetime import date, datetime, timedelta, timezone
 from statistics import median
-from typing import Any
+from typing import Any, Literal
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -15,6 +15,9 @@ from app.models import (
     TargetCompletionEvent,
     TargetCompletionTarget,
 )
+
+
+StatsRange = Literal["last_session", "7d", "30d", "all"]
 
 
 def _iso(value: datetime | None) -> str | None:
@@ -69,6 +72,53 @@ def _github_code_url(app_git_sha: str | None) -> str | None:
     return f"https://github.com/sdrawkcaBdeT/chipping/tree/{app_git_sha}"
 
 
+def _session_in_window(session: PracticeSession, start_date: date) -> bool:
+    if session.started_at.date() >= start_date:
+        return True
+    return session.ended_at is not None and session.ended_at.date() >= start_date
+
+
+def _filter_data_for_range(
+    data: dict[str, list[Any]],
+    stats_range: StatsRange,
+) -> dict[str, list[Any]]:
+    if stats_range == "all":
+        return data
+
+    sessions: list[PracticeSession] = data["sessions"]
+    if stats_range == "last_session":
+        latest_session = max(
+            sessions,
+            key=lambda session: _datetime_key(session.started_at),
+            default=None,
+        )
+        session_ids = {latest_session.id} if latest_session else set()
+    else:
+        days = {"7d": 7, "30d": 30}[stats_range]
+        start_date = datetime.now(timezone.utc).date() - timedelta(days=days - 1)
+        session_ids = {
+            session.id for session in sessions if _session_in_window(session, start_date)
+        }
+
+    buckets = [
+        bucket for bucket in data["buckets"] if bucket.session_id in session_ids
+    ]
+    games = [game for game in data["games"] if game.session_id in session_ids]
+    game_ids = {game.id for game in games}
+
+    return {
+        "sessions": [session for session in sessions if session.id in session_ids],
+        "buckets": buckets,
+        "games": games,
+        "targets": [
+            target for target in data["targets"] if target.game_run_id in game_ids
+        ],
+        "events": [
+            event for event in data["events"] if event.game_run_id in game_ids
+        ],
+    }
+
+
 async def load_practice_data(db: AsyncSession) -> dict[str, list[Any]]:
     sessions_result = await db.execute(
         select(PracticeSession).order_by(PracticeSession.started_at.desc(), PracticeSession.id)
@@ -101,7 +151,8 @@ async def load_practice_data(db: AsyncSession) -> dict[str, list[Any]]:
     }
 
 
-def build_summary(data: dict[str, list[Any]]) -> dict[str, Any]:
+def build_summary(data: dict[str, list[Any]], stats_range: StatsRange = "all") -> dict[str, Any]:
+    data = _filter_data_for_range(data, stats_range)
     sessions: list[PracticeSession] = data["sessions"]
     buckets: list[PracticeBucket] = data["buckets"]
     games: list[GameRun] = data["games"]
@@ -188,6 +239,16 @@ def build_summary(data: dict[str, list[Any]]) -> dict[str, Any]:
                 "completed_targets": completed_targets,
                 "target_order": game.target_order,
                 "bucket_count": len(buckets_by_game[game.id]),
+                "targets": [
+                    {
+                        "target_number": target.target_number,
+                        "order_index": target.order_index,
+                        "attempts": target.attempts,
+                        "hit": target.hit,
+                        "completed_at": _iso(target.completed_at),
+                    }
+                    for target in game_targets
+                ],
             }
         )
 

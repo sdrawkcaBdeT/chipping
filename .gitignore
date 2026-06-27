@@ -14,3 +14,5 @@ ui/vite-project/dist/
 
 .DS_Store
 Thumbs.db
+chipping_net_targets_layout.json
+chipping_net_visual_template.svg

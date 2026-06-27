@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 
+import chippingNetTargetsLayout from "./data/chippingNetTargetsLayout.json";
 import "./styles.css";
 
 async function api(path, options = {}) {
@@ -117,9 +118,45 @@ function isEarlierDate(value) {
 }
 
 const QUICK_LOG_COUNTS = [42, 21, 10];
+const DASHBOARD_RANGES = [
+  {
+    key: "last_session",
+    label: "Last session",
+    heroSuffix: "in the last session"
+  },
+  {
+    key: "7d",
+    label: "7D",
+    heroSuffix: "in the last 7 days"
+  },
+  {
+    key: "30d",
+    label: "30D",
+    heroSuffix: "in the last 30 days"
+  },
+  {
+    key: "all",
+    label: "All",
+    heroSuffix: "tracked"
+  }
+];
+const TARGET_MAP_MODES = [
+  { key: "performance", label: "Performance" },
+  { key: "last_run", label: "Last Run" }
+];
+const NET_MESH_LINES = [16, 24, 32, 40, 48, 56, 64, 72, 80, 88];
 
 function sourceLabel(source) {
   return source.replaceAll("_", " ");
+}
+
+function publicStatsPath(path, rangeKey) {
+  const params = new URLSearchParams({ range: rangeKey });
+  return `${path}?${params.toString()}`;
+}
+
+function rangeOption(rangeKey) {
+  return DASHBOARD_RANGES.find((item) => item.key === rangeKey) || DASHBOARD_RANGES[2];
 }
 
 function scoreDeltaLabel(value) {
@@ -139,15 +176,70 @@ function targetDifficultyClass(target) {
     return "noData";
   }
 
+  const classes = [];
   if (target.average_balls_to_hit >= 3) {
-    return "hard";
+    classes.push("hard");
   }
 
   if (target.average_balls_to_hit <= 1.5) {
-    return "sharp";
+    classes.push("sharp");
   }
 
-  return "";
+  if ((target.attempts || 0) < 3) {
+    classes.push("lowSample");
+  }
+
+  return classes.join(" ");
+}
+
+function runTargetClass(target) {
+  if (!target || !target.attempts) {
+    return "noData";
+  }
+
+  const classes = [];
+  if (target.attempts >= 3) {
+    classes.push("hard");
+  }
+
+  if (target.hit && target.attempts <= 1) {
+    classes.push("sharp");
+  }
+
+  return classes.join(" ");
+}
+
+function targetByNumber(targets) {
+  return new Map(targets.map((target) => [target.target_number, target]));
+}
+
+function compactMetric(value) {
+  if (value === null || value === undefined) {
+    return "-";
+  }
+
+  return formatNumber(value);
+}
+
+function SegmentedControl({ label, options, value, onChange }) {
+  return (
+    <div className="segmentedBlock" aria-label={label}>
+      <span>{label}</span>
+      <div className="segmentedControl">
+        {options.map((option) => (
+          <button
+            aria-pressed={option.key === value}
+            className={option.key === value ? "active" : ""}
+            key={option.key}
+            onClick={() => onChange(option.key)}
+            type="button"
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 function StatCard({ label, value, detail }) {
@@ -235,28 +327,90 @@ function CompletionTrend({ runs = [] }) {
   );
 }
 
-function TargetMap({ targets = [] }) {
-  const targetRows = targets.length
-    ? targets
-    : Array.from({ length: 9 }, (_, index) => ({
-        target_number: index + 1,
-        average_balls_to_hit: null,
-        attempts: 0
-      }));
+function TargetNetMap({ mode = "performance", rangeLabel, run, targets = [] }) {
+  const performanceTargets = targetByNumber(targets);
+  const runTargets = targetByNumber(run?.targets || []);
+  const isLastRun = mode === "last_run";
+  const mapLabel = isLastRun
+    ? run
+      ? `${run.variant} run / ${formatMaybeNumber(run.score)} balls`
+      : "No completed run"
+    : `${rangeLabel} / avg balls to hit`;
 
   return (
-    <ol className="targetMap" aria-label="Target difficulty map">
-      {targetRows.map((target) => (
-        <li
-          className={targetDifficultyClass(target)}
-          key={target.target_number}
-          title={`Target ${target.target_number}`}
-        >
-          <strong>{target.target_number}</strong>
-          <span>{formatMaybeNumber(target.average_balls_to_hit)}</span>
-        </li>
-      ))}
-    </ol>
+    <div className="netMapWrap">
+      <svg className="netMap" role="img" aria-label={`Chipping net target map, ${mapLabel}`} viewBox="0 0 100 100">
+        <defs>
+          <pattern
+            id="netMesh"
+            width="4"
+            height="4"
+            patternTransform="rotate(38)"
+            patternUnits="userSpaceOnUse"
+          >
+            <path d="M0 0 L0 4" />
+          </pattern>
+        </defs>
+        <ellipse className="netBody" cx="50" cy="54" rx="46" ry="42" />
+        <ellipse className="netInnerRim" cx="50" cy="54" rx="43" ry="38" />
+        {NET_MESH_LINES.map((x) => (
+          <path className="netStrand" d={`M${x} 17 C${x - 4} 36 ${x + 4} 68 ${x} 92`} key={x} />
+        ))}
+        <path className="netBase" d="M17 91 C29 98 71 98 83 91" />
+        {chippingNetTargetsLayout.targets.map((layoutTarget) => {
+          const target = performanceTargets.get(layoutTarget.id) || {
+            target_number: layoutTarget.id,
+            average_balls_to_hit: null,
+            attempts: 0,
+            hit_rate: null
+          };
+          const runTarget = runTargets.get(layoutTarget.id);
+          const value = isLastRun ? runTarget?.attempts : target.average_balls_to_hit;
+          const subValue = isLastRun
+            ? runTarget?.hit
+              ? "hit"
+              : "open"
+            : target.attempts
+              ? `${target.attempts} att`
+              : "no reps";
+          const stateClass = isLastRun ? runTargetClass(runTarget) : targetDifficultyClass(target);
+          const numberX = layoutTarget.x + layoutTarget.num_dx * layoutTarget.r;
+          const numberY = layoutTarget.y + layoutTarget.num_dy * layoutTarget.r;
+
+          return (
+            <g className={`netTargetGroup ${stateClass}`} key={layoutTarget.id}>
+              <g
+                className="netTarget"
+                style={{ "--target-color": layoutTarget.color }}
+                transform={`translate(${layoutTarget.x} ${layoutTarget.y})`}
+              >
+                <title>
+                  {isLastRun
+                    ? `Target ${layoutTarget.id}: ${formatMaybeNumber(value)} balls in last run`
+                    : `Target ${layoutTarget.id}: ${formatMaybeNumber(value)} average balls to hit`}
+                </title>
+                <circle className="netTargetShadow" r={layoutTarget.r + 1.4} />
+                <circle className="netTargetRing" r={layoutTarget.r} />
+                <circle className="netTargetMesh" r={Math.max(1, layoutTarget.r - 1.5)} />
+                <text className="netTargetValue" textAnchor="middle" y="-0.4">
+                  {compactMetric(value)}
+                </text>
+                <text className="netTargetSubvalue" textAnchor="middle" y="4.2">
+                  {subValue}
+                </text>
+              </g>
+              <text className="netTargetNumber" textAnchor="middle" x={numberX} y={numberY}>
+                {layoutTarget.id}
+              </text>
+            </g>
+          );
+        })}
+      </svg>
+      <div className="netMapReadout">
+        <span>{mapLabel}</span>
+        <span>{isLastRun ? "balls per target" : "dimmed targets need more reps"}</span>
+      </div>
+    </div>
   );
 }
 
@@ -278,6 +432,8 @@ function ObserverDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [stats, setStats] = useState(null);
+  const [selectedRange, setSelectedRange] = useState("30d");
+  const [targetMode, setTargetMode] = useState("performance");
 
   useEffect(() => {
     let ignore = false;
@@ -287,13 +443,14 @@ function ObserverDashboard() {
       setError("");
 
       try {
+        const rangedPath = (path) => publicStatsPath(path, selectedRange);
         const [overview, volume, accuracy, targets, completion, sessions, build] = await Promise.all([
-          api("/api/public/overview"),
-          api("/api/public/volume"),
-          api("/api/public/accuracy"),
-          api("/api/public/targets"),
-          api("/api/public/completion"),
-          api("/api/public/sessions"),
+          api(rangedPath("/api/public/overview")),
+          api(rangedPath("/api/public/volume")),
+          api(rangedPath("/api/public/accuracy")),
+          api(rangedPath("/api/public/targets")),
+          api(rangedPath("/api/public/completion")),
+          api(rangedPath("/api/public/sessions")),
           api("/api/public/build")
         ]);
 
@@ -315,7 +472,7 @@ function ObserverDashboard() {
     return () => {
       ignore = true;
     };
-  }, []);
+  }, [selectedRange]);
 
   const overview = stats?.overview;
   const volume = stats?.volume;
@@ -327,6 +484,8 @@ function ObserverDashboard() {
   const recentSessions = stats?.sessions?.sessions || [];
   const sourceTotals = Object.entries(volume?.source_totals || {});
   const build = stats?.build;
+  const activeRange = rangeOption(selectedRange);
+  const latestCompletionRun = completionRuns[0] || null;
 
   return (
     <main className="shell dashboardShell">
@@ -354,10 +513,21 @@ function ObserverDashboard() {
 
       {overview ? (
         <>
+          <section className="dashboardControls">
+            <SegmentedControl
+              label="Window"
+              onChange={setSelectedRange}
+              options={DASHBOARD_RANGES}
+              value={selectedRange}
+            />
+          </section>
+
           <section className="dashboardHero">
             <div className="heroCopy">
               <p className="eyebrow">Public training dashboard</p>
-              <h1>{formatNumber(overview.total_balls)} balls tracked</h1>
+              <h1>
+                {formatNumber(overview.total_balls)} balls {activeRange.heroSuffix}
+              </h1>
               <p>
                 Indoor chipping practice at {overview.practice_days} practice{" "}
                 {overview.practice_days === 1 ? "day" : "days"} and{" "}
@@ -366,8 +536,8 @@ function ObserverDashboard() {
             </div>
             <div className="heroScoreboard">
               <StatCard
-                label="Last 7 days"
-                value={`${formatNumber(overview.balls_last_7_days)} balls`}
+                label={activeRange.label}
+                value={`${formatNumber(overview.total_balls)} balls`}
                 detail={
                   overview.latest_practice_at
                     ? `Last ${formatDateTime(overview.latest_practice_at)}`
@@ -395,7 +565,7 @@ function ObserverDashboard() {
                   <p className="eyebrow">Volume</p>
                   <h2>Recent work</h2>
                 </div>
-                <span>{formatNumber(volume?.balls_last_30_days)} / 30d</span>
+                <span>{activeRange.label}</span>
               </div>
               <VolumeBars days={volume?.daily || []} />
               <div className="sourceTotals">
@@ -435,12 +605,30 @@ function ObserverDashboard() {
               <div className="panelHeader">
                 <div>
                   <p className="eyebrow">Targets</p>
-                  <h2>1-9 map</h2>
+                  <h2>Net map</h2>
                 </div>
-                <span>avg balls to hit</span>
+                <span>{targetMode === "last_run" ? "last run" : "avg balls to hit"}</span>
               </div>
-              <TargetMap targets={targets} />
-              {hardestTargets.length || easiestTargets.length ? (
+              <SegmentedControl
+                label="Map"
+                onChange={setTargetMode}
+                options={TARGET_MAP_MODES}
+                value={targetMode}
+              />
+              <TargetNetMap
+                mode={targetMode}
+                rangeLabel={activeRange.label}
+                run={latestCompletionRun}
+                targets={targets}
+              />
+              {targetMode === "last_run" && latestCompletionRun ? (
+                <div className="miniMetricRow">
+                  <span>Score {formatMaybeNumber(latestCompletionRun.score)}</span>
+                  <span>{latestCompletionRun.variant}</span>
+                  <span>{formatDateTime(latestCompletionRun.ended_at || latestCompletionRun.started_at)}</span>
+                </div>
+              ) : null}
+              {targetMode === "performance" && (hardestTargets.length || easiestTargets.length) ? (
                 <div className="targetInsightGrid">
                   <div className="weakTargetRow">
                     <span className="chipLabel">Hardest</span>
@@ -459,9 +647,9 @@ function ObserverDashboard() {
                     ))}
                   </div>
                 </div>
-              ) : (
+              ) : targetMode === "performance" ? (
                 <EmptyState>No target history yet.</EmptyState>
-              )}
+              ) : null}
             </article>
           </section>
 

@@ -1,6 +1,11 @@
+import asyncio
+from datetime import datetime, timedelta, timezone
+
 from fastapi.testclient import TestClient
+import sqlalchemy as sa
 
 from app.config import get_settings
+from app.database import get_engine
 
 
 def _login(client: TestClient) -> None:
@@ -31,6 +36,46 @@ def _seed_practice_data(client: TestClient) -> str:
     )
     assert standalone_response.status_code == 201
     return session_id
+
+
+def _move_session_days_ago(session_id: str, days: int) -> None:
+    old_start = datetime.now(timezone.utc) - timedelta(days=days)
+    old_end = old_start + timedelta(minutes=12)
+
+    async def move_session() -> None:
+        async with get_engine().begin() as connection:
+            await connection.execute(
+                sa.text(
+                    """
+                    UPDATE practice_sessions
+                    SET started_at = :started_at, ended_at = :ended_at
+                    WHERE id = :session_id
+                    """
+                ),
+                {"session_id": session_id, "started_at": old_start, "ended_at": old_end},
+            )
+            await connection.execute(
+                sa.text(
+                    """
+                    UPDATE practice_buckets
+                    SET started_at = :started_at, ended_at = :ended_at
+                    WHERE session_id = :session_id
+                    """
+                ),
+                {"session_id": session_id, "started_at": old_start, "ended_at": old_end},
+            )
+            await connection.execute(
+                sa.text(
+                    """
+                    UPDATE game_runs
+                    SET started_at = :started_at, ended_at = :ended_at
+                    WHERE session_id = :session_id
+                    """
+                ),
+                {"session_id": session_id, "started_at": old_start, "ended_at": old_end},
+            )
+
+    asyncio.run(move_session())
 
 
 def test_public_endpoints_do_not_require_auth(session_client):
@@ -76,7 +121,31 @@ def test_public_stats_summarize_sessions_volume_completion_and_targets(session_c
     assert completion["completed_count"] == 1
     assert completion["variant_comparison"]["sequential"]["median_score"] == 10
     assert completion["completed_runs"][0]["score"] == 10
+    assert completion["completed_runs"][0]["targets"][0]["attempts"] == 2
     assert len(sessions["sessions"]) == 2
+
+
+def test_public_stats_can_filter_to_recent_ranges(session_client):
+    older_session_id = _seed_practice_data(session_client)
+    _move_session_days_ago(older_session_id, 45)
+
+    all_targets = session_client.get("/api/public/targets?range=all").json()
+    recent_overview = session_client.get("/api/public/overview?range=30d").json()
+    recent_accuracy = session_client.get("/api/public/accuracy?range=30d").json()
+    recent_targets = session_client.get("/api/public/targets?range=30d").json()
+    last_session = session_client.get("/api/public/sessions?range=last_session").json()
+
+    assert all_targets["targets"][0]["average_balls_to_hit"] == 2
+    assert recent_overview["total_sessions"] == 1
+    assert recent_overview["total_balls"] == 21
+    assert recent_accuracy == {
+        "target_completion_attempts": 0,
+        "hits": 0,
+        "misses": 0,
+        "hit_rate": None,
+    }
+    assert recent_targets["targets"][0]["average_balls_to_hit"] is None
+    assert len(last_session["sessions"]) == 1
 
 
 def test_public_endpoints_are_read_only(session_client):
