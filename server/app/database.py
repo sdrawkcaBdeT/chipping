@@ -1,4 +1,8 @@
+from collections.abc import AsyncIterator
+from functools import lru_cache
+
 from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase
 
@@ -9,11 +13,26 @@ class Base(DeclarativeBase):
     pass
 
 
-settings = get_settings()
-engine = create_async_engine(settings.database_url, pool_pre_ping=True)
-AsyncSessionLocal = async_sessionmaker(engine, expire_on_commit=False)
+@lru_cache
+def get_engine():
+    return create_async_engine(get_settings().database_url, pool_pre_ping=True)
+
+
+@lru_cache
+def get_sessionmaker() -> async_sessionmaker[AsyncSession]:
+    return async_sessionmaker(get_engine(), expire_on_commit=False)
+
+
+async def get_db() -> AsyncIterator[AsyncSession]:
+    async with get_sessionmaker()() as session:
+        yield session
+
+
+def reset_database_caches() -> None:
+    get_sessionmaker.cache_clear()
+    get_engine.cache_clear()
 
 
 async def check_database_connection() -> None:
-    async with engine.connect() as connection:
+    async with get_engine().connect() as connection:
         await connection.execute(text("SELECT 1"))

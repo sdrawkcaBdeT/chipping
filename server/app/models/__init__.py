@@ -1,1 +1,3 @@
-"""Domain models will be added in later milestones."""
+from app.models.session import PracticeSession
+
+__all__ = ["PracticeSession"]

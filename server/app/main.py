@@ -5,7 +5,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
+from app.api.auth import router as auth_router
 from app.api.health import router as health_router
+from app.api.sessions import router as sessions_router
 from app.config import get_settings
 
 
@@ -22,7 +24,9 @@ def create_app() -> FastAPI:
             allow_headers=["*"],
         )
 
+    app.include_router(auth_router, prefix="/api")
     app.include_router(health_router, prefix="/api")
+    app.include_router(sessions_router, prefix="/api")
     mount_frontend(app, settings.static_dir)
     return app
 

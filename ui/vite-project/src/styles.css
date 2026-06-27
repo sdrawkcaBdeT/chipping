@@ -45,6 +45,13 @@ a {
   margin-bottom: 28px;
 }
 
+.topbarActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
 .eyebrow {
   margin: 0 0 6px;
   color: #526052;
@@ -107,6 +114,21 @@ button {
   background: rgba(255, 255, 255, 0.72);
   border-color: rgba(23, 63, 53, 0.22);
   color: #173f35;
+}
+
+.secondaryButton {
+  background: rgba(255, 255, 255, 0.72);
+  border-color: rgba(23, 63, 53, 0.22);
+  color: #173f35;
+}
+
+.secondaryButton.danger {
+  border-color: rgba(153, 45, 45, 0.24);
+  color: #8a2525;
+}
+
+.wide {
+  width: 100%;
 }
 
 .panel {
@@ -233,6 +255,126 @@ button:disabled {
   opacity: 0.55;
 }
 
+.formError,
+.pageError,
+.warningText {
+  margin: 0;
+  color: #8a2525;
+  font-weight: 700;
+}
+
+.pageError {
+  margin-top: 18px;
+}
+
+.sessionGrid {
+  display: grid;
+  gap: 18px;
+}
+
+.sessionPanel {
+  min-height: 360px;
+}
+
+.controlStack {
+  display: grid;
+  gap: 10px;
+  align-self: stretch;
+}
+
+.sessionFacts {
+  display: grid;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.sessionFacts div {
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  border: 1px solid rgba(23, 63, 53, 0.12);
+  border-radius: 8px;
+  background: rgba(245, 247, 242, 0.72);
+}
+
+.sessionFacts span,
+.sessionList span,
+.muted {
+  color: #5d695d;
+  font-size: 0.92rem;
+}
+
+.sessionFacts strong {
+  color: #172018;
+  font-size: 1.08rem;
+}
+
+.historyPanel {
+  padding: 22px;
+  border: 1px solid rgba(23, 63, 53, 0.14);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.68);
+}
+
+.historyHeader {
+  margin-bottom: 14px;
+}
+
+.sessionList {
+  display: grid;
+  gap: 10px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.sessionList li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 62px;
+  padding: 12px;
+  border: 1px solid rgba(23, 63, 53, 0.12);
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.sessionList div {
+  display: grid;
+  gap: 4px;
+}
+
+.statusPill {
+  display: inline-flex;
+  min-width: 86px;
+  min-height: 30px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 0 10px;
+  background: #edf2e5;
+  color: #42553d;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.statusPill.active {
+  background: #dfeee5;
+  color: #1d6041;
+}
+
+.statusPill.completed {
+  background: #e7edf2;
+  color: #24546f;
+}
+
+.statusPill.abandoned {
+  background: #f3e4e0;
+  color: #8a2525;
+}
+
 @media (min-width: 760px) {
   .shell {
     padding: 40px 28px 56px;
@@ -245,5 +387,13 @@ button:disabled {
 
   .loginPanel {
     grid-template-columns: minmax(0, 1fr) minmax(260px, 320px);
+  }
+
+  .sessionGrid {
+    grid-template-columns: minmax(0, 1fr) 320px;
+  }
+
+  .sessionPanel {
+    grid-template-columns: minmax(0, 1fr) 260px;
   }
 }

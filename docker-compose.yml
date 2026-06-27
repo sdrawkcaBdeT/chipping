@@ -20,6 +20,11 @@ services:
     environment:
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-chipping}:${POSTGRES_PASSWORD:-chipping}@db:5432/${POSTGRES_DB:-chipping}
       CORS_ORIGINS: http://localhost:5173,http://localhost:8000
+      OWNER_PIN: ${OWNER_PIN:-}
+      OWNER_PASSWORD: ${OWNER_PASSWORD:-}
+      JWT_SECRET: ${JWT_SECRET:-}
+      SESSION_DAYS: ${SESSION_DAYS:-30}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
     ports:
       - "8000:8000"
     depends_on:
