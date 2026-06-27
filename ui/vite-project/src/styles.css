@@ -335,6 +335,98 @@ button:disabled {
   background: rgba(255, 255, 255, 0.72);
 }
 
+.targetGamePanel {
+  display: grid;
+  gap: 16px;
+  padding: 22px;
+  border: 1px solid rgba(23, 63, 53, 0.14);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.76);
+}
+
+.activeTargetGame {
+  gap: 18px;
+}
+
+.gameHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.gameStartGrid,
+.gameActionGrid {
+  display: grid;
+  gap: 10px;
+}
+
+.gameStats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.gameStats div {
+  display: grid;
+  gap: 4px;
+  min-height: 72px;
+  padding: 12px;
+  border: 1px solid rgba(23, 63, 53, 0.12);
+  border-radius: 8px;
+  background: rgba(245, 247, 242, 0.74);
+}
+
+.gameStats span {
+  color: #5d695d;
+  font-size: 0.82rem;
+}
+
+.gameStats strong {
+  color: #172018;
+  font-size: 1.2rem;
+}
+
+.targetGrid {
+  display: grid;
+  grid-template-columns: repeat(9, minmax(0, 1fr));
+  gap: 6px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.targetGrid li {
+  display: grid;
+  min-height: 54px;
+  align-content: center;
+  justify-items: center;
+  gap: 2px;
+  border: 1px solid rgba(23, 63, 53, 0.14);
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.targetGrid li.current {
+  border-color: #173f35;
+  box-shadow: inset 0 0 0 2px rgba(23, 63, 53, 0.28);
+}
+
+.targetGrid li.completed {
+  background: #dfeee5;
+  color: #1d6041;
+}
+
+.targetGrid strong {
+  font-size: 1rem;
+}
+
+.targetGrid span {
+  color: #5d695d;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
 .historyHeader {
   margin-bottom: 14px;
 }
@@ -484,17 +576,27 @@ button:disabled {
 
   .sessionPanel {
     grid-column: 1;
-    grid-row: 1;
     grid-template-columns: minmax(0, 1fr) 260px;
+  }
+
+  .targetGamePanel {
+    grid-column: 1;
   }
 
   .quickLogPanel {
     grid-column: 1;
-    grid-row: 2;
   }
 
   .historyPanel {
     grid-column: 2;
-    grid-row: 1 / span 2;
+    grid-row: 1 / span 3;
+  }
+
+  .gameStartGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .gameActionGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }

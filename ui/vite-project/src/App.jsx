@@ -171,7 +171,7 @@ function QuickLogPanel({ activeSession, buckets, disabled, onQuickLog }) {
   const selectedBallCount = useCustom ? customBallCount : selectedCount;
   const canLog =
     Number.isInteger(selectedBallCount) && selectedBallCount >= 1 && selectedBallCount <= 500;
-  const recentBuckets = buckets.slice(0, 4);
+  const recentBuckets = buckets.filter((bucket) => bucket.ball_count > 0).slice(0, 4);
 
   function pickCount(count) {
     setSelectedCount(count);
@@ -304,25 +304,158 @@ function QuickLogPanel({ activeSession, buckets, disabled, onQuickLog }) {
   );
 }
 
+function TargetCompletionPanel({
+  activeSession,
+  activeGame,
+  disabled,
+  onStartGame,
+  onGameAction,
+  onEndBucket
+}) {
+  if (!activeSession) {
+    return null;
+  }
+
+  if (!activeGame) {
+    return (
+      <div className="targetGamePanel">
+        <div>
+          <p className="eyebrow">Target Completion</p>
+          <h2>Start 1-9</h2>
+        </div>
+        <div className="gameStartGrid">
+          <button type="button" onClick={() => onStartGame("sequential")} disabled={disabled}>
+            Sequential 1-9
+          </button>
+          <button
+            className="secondaryButton"
+            type="button"
+            onClick={() => onStartGame("random")}
+            disabled={disabled}
+          >
+            Random 1-9
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const currentTarget = activeGame.current_target;
+
+  return (
+    <div className="targetGamePanel activeTargetGame">
+      <div className="gameHeader">
+        <div>
+          <p className="eyebrow">Target Completion</p>
+          <h2>{currentTarget ? `Target ${currentTarget.target_number}` : "Complete"}</h2>
+        </div>
+        <SessionStatusPill status={activeGame.variant} />
+      </div>
+
+      <div className="gameStats">
+        <div>
+          <span>Target attempts</span>
+          <strong>{currentTarget ? currentTarget.attempts : 0}</strong>
+        </div>
+        <div>
+          <span>Bucket balls</span>
+          <strong>{activeGame.current_bucket_balls}</strong>
+        </div>
+        <div>
+          <span>Total balls</span>
+          <strong>{activeGame.total_balls_used}</strong>
+        </div>
+        <div>
+          <span>Game timer</span>
+          <strong>{sessionDuration(activeGame)}</strong>
+        </div>
+      </div>
+
+      <ol className="targetGrid" aria-label="Target order">
+        {activeGame.targets.map((target) => (
+          <li
+            className={[
+              target.hit ? "completed" : "",
+              currentTarget?.target_number === target.target_number ? "current" : ""
+            ]
+              .filter(Boolean)
+              .join(" ")}
+            key={target.target_number}
+          >
+            <strong>{target.target_number}</strong>
+            <span>{target.attempts}</span>
+          </li>
+        ))}
+      </ol>
+
+      <div className="gameActionGrid">
+        <button
+          type="button"
+          onClick={() => onGameAction("miss")}
+          disabled={disabled || !currentTarget || activeGame.status !== "active"}
+        >
+          Miss / +1
+        </button>
+        <button
+          type="button"
+          onClick={() => onGameAction("hit")}
+          disabled={disabled || !currentTarget || activeGame.status !== "active"}
+        >
+          Hit Target
+        </button>
+        <button
+          className="secondaryButton"
+          type="button"
+          onClick={() => onGameAction("undo")}
+          disabled={disabled || activeGame.total_balls_used === 0}
+        >
+          Undo
+        </button>
+        <button
+          className="secondaryButton"
+          type="button"
+          onClick={onEndBucket}
+          disabled={disabled || !activeGame.active_bucket || activeGame.status !== "active"}
+        >
+          End Bucket / Retrieve
+        </button>
+        <button
+          className="secondaryButton danger"
+          type="button"
+          onClick={() => onGameAction("stop")}
+          disabled={disabled || activeGame.status !== "active"}
+        >
+          Stop Game
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function OwnerSession() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [quickLogBusy, setQuickLogBusy] = useState(false);
+  const [gameBusy, setGameBusy] = useState(false);
   const [error, setError] = useState("");
   const [quickLogMessage, setQuickLogMessage] = useState("");
+  const [gameMessage, setGameMessage] = useState("");
   const [activeSession, setActiveSession] = useState(null);
   const [activeBuckets, setActiveBuckets] = useState([]);
+  const [activeGame, setActiveGame] = useState(null);
   const [sessions, setSessions] = useState([]);
 
   async function refreshSessions() {
-    const [active, history] = await Promise.all([
+    const [active, history, game] = await Promise.all([
       api("/api/sessions/active"),
-      api("/api/sessions")
+      api("/api/sessions"),
+      api("/api/game-runs/active")
     ]);
     const buckets = active ? await api(`/api/sessions/${active.id}/buckets`) : [];
 
     setActiveSession(active);
     setActiveBuckets(buckets);
+    setActiveGame(game);
     setSessions(history);
   }
 
@@ -362,6 +495,7 @@ function OwnerSession() {
     setBusy(true);
     setError("");
     setQuickLogMessage("");
+    setGameMessage("");
 
     try {
       const session = await api("/api/sessions/start", {
@@ -389,6 +523,7 @@ function OwnerSession() {
     setBusy(true);
     setError("");
     setQuickLogMessage("");
+    setGameMessage("");
 
     try {
       await api(`/api/sessions/${activeSession.id}/stop`, { method: "POST" });
@@ -409,6 +544,7 @@ function OwnerSession() {
     setBusy(true);
     setError("");
     setQuickLogMessage("");
+    setGameMessage("");
 
     try {
       await api(`/api/sessions/${activeSession.id}/abandon`, { method: "POST" });
@@ -430,6 +566,7 @@ function OwnerSession() {
     setQuickLogBusy(true);
     setError("");
     setQuickLogMessage("");
+    setGameMessage("");
 
     try {
       const result = await api("/api/quick-log", {
@@ -451,8 +588,91 @@ function OwnerSession() {
     }
   }
 
+  async function startTargetCompletion(variant) {
+    setGameBusy(true);
+    setError("");
+    setGameMessage("");
+    setQuickLogMessage("");
+
+    try {
+      const game = await api("/api/game-runs", {
+        method: "POST",
+        body: JSON.stringify({ variant })
+      });
+      setActiveGame(game);
+      await refreshSessions();
+      window.history.replaceState({}, "", `/me/game/${game.id}`);
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setGameBusy(false);
+    }
+  }
+
+  async function gameAction(action) {
+    if (!activeGame) {
+      return;
+    }
+
+    const endpoints = {
+      miss: `/api/game-runs/${activeGame.id}/target-completion/miss`,
+      hit: `/api/game-runs/${activeGame.id}/target-completion/hit`,
+      undo: `/api/game-runs/${activeGame.id}/undo`,
+      stop: `/api/game-runs/${activeGame.id}/stop`
+    };
+
+    setGameBusy(true);
+    setError("");
+    setGameMessage("");
+    setQuickLogMessage("");
+
+    try {
+      const game = await api(endpoints[action], { method: "POST" });
+      setActiveGame(game.status === "active" ? game : null);
+      await refreshSessions();
+      if (game.status === "completed") {
+        setActiveGame(game);
+        setGameMessage(`Target Completion complete: ${game.total_balls_used} balls`);
+        window.history.replaceState({}, "", "/me/session/active");
+      } else if (game.status === "stopped") {
+        setGameMessage("Target Completion stopped");
+        window.history.replaceState({}, "", "/me/session/active");
+      } else {
+        window.history.replaceState({}, "", `/me/game/${game.id}`);
+      }
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setGameBusy(false);
+    }
+  }
+
+  async function endGameBucket() {
+    if (!activeGame?.active_bucket) {
+      return;
+    }
+
+    setGameBusy(true);
+    setError("");
+    setGameMessage("");
+    setQuickLogMessage("");
+
+    try {
+      await api(`/api/buckets/${activeGame.active_bucket.id}/end`, { method: "POST" });
+      const game = await api(`/api/game-runs/${activeGame.id}`);
+      setActiveGame(game);
+      await refreshSessions();
+      setGameMessage("Bucket ended");
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setGameBusy(false);
+    }
+  }
+
   const activeFromEarlier = isEarlierDate(activeSession?.started_at);
   const activeBallTotal = activeBuckets.reduce((total, bucket) => total + bucket.ball_count, 0);
+  const controlsDisabled = loading || busy || quickLogBusy || gameBusy;
 
   return (
     <main className="shell">
@@ -533,12 +753,23 @@ function OwnerSession() {
           </div>
         </div>
 
-        <QuickLogPanel
+        <TargetCompletionPanel
           activeSession={activeSession}
-          buckets={activeBuckets}
-          disabled={loading || busy || quickLogBusy}
-          onQuickLog={quickLog}
+          activeGame={activeGame}
+          disabled={controlsDisabled}
+          onStartGame={startTargetCompletion}
+          onGameAction={gameAction}
+          onEndBucket={endGameBucket}
         />
+
+        {!activeGame ? (
+          <QuickLogPanel
+            activeSession={activeSession}
+            buckets={activeBuckets}
+            disabled={controlsDisabled}
+            onQuickLog={quickLog}
+          />
+        ) : null}
 
         <div className="historyPanel">
           <div className="historyHeader">
@@ -565,6 +796,7 @@ function OwnerSession() {
       </section>
 
       {quickLogMessage ? <p className="successMessage">{quickLogMessage}</p> : null}
+      {gameMessage ? <p className="successMessage">{gameMessage}</p> : null}
       {error ? <p className="pageError">{error}</p> : null}
     </main>
   );
@@ -575,7 +807,12 @@ export default function App() {
     return <MeLogin />;
   }
 
-  if (window.location.pathname === "/me" || window.location.pathname === "/me/session/active") {
+  if (
+    window.location.pathname === "/me" ||
+    window.location.pathname === "/me/session/active" ||
+    window.location.pathname === "/me/completion/new" ||
+    window.location.pathname.startsWith("/me/game/")
+  ) {
     return <OwnerSession />;
   }
 

@@ -7,6 +7,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.api.auth import router as auth_router
 from app.api.buckets import router as buckets_router
+from app.api.game_runs import router as game_runs_router
 from app.api.health import router as health_router
 from app.api.quick_log import router as quick_log_router
 from app.api.sessions import router as sessions_router
@@ -30,6 +31,7 @@ def create_app() -> FastAPI:
     app.include_router(health_router, prefix="/api")
     app.include_router(sessions_router, prefix="/api")
     app.include_router(buckets_router, prefix="/api")
+    app.include_router(game_runs_router, prefix="/api")
     app.include_router(quick_log_router, prefix="/api")
     mount_frontend(app, settings.static_dir)
     return app

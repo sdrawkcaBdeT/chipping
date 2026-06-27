@@ -7,7 +7,7 @@ from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.models import PracticeSession
+from app.models import GameRun, PracticeBucket, PracticeSession
 from app.models.session import utc_now
 from app.security import require_owner
 
@@ -61,6 +61,31 @@ async def _session_or_404(session_id: str, db: AsyncSession) -> PracticeSession:
     if session is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
     return session
+
+
+async def _close_active_session_work(
+    session_id: str,
+    db: AsyncSession,
+    now: datetime,
+) -> None:
+    active_games_result = await db.execute(
+        select(GameRun).where(GameRun.session_id == session_id, GameRun.status == "active")
+    )
+    for game in active_games_result.scalars().all():
+        game.status = "stopped"
+        game.ended_at = now
+        game.updated_at = now
+
+    active_buckets_result = await db.execute(
+        select(PracticeBucket).where(
+            PracticeBucket.session_id == session_id,
+            PracticeBucket.status == "active",
+        )
+    )
+    for bucket in active_buckets_result.scalars().all():
+        bucket.status = "completed"
+        bucket.ended_at = now
+        bucket.updated_at = now
 
 
 @router.post("/start", response_model=SessionResponse, status_code=status.HTTP_201_CREATED)
@@ -141,6 +166,7 @@ async def stop_session(
         )
 
     now = utc_now()
+    await _close_active_session_work(practice_session.id, db, now)
     practice_session.status = "completed"
     practice_session.ended_at = now
     practice_session.updated_at = now
@@ -162,6 +188,7 @@ async def abandon_session(
         )
 
     now = utc_now()
+    await _close_active_session_work(practice_session.id, db, now)
     practice_session.status = "abandoned"
     practice_session.ended_at = now
     practice_session.updated_at = now
