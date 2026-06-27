@@ -4,7 +4,7 @@ Personal golf chipping tracker for `chip.cashbaggins.dev`.
 
 This repository currently includes the scaffold, owner PIN auth, manual practice sessions, Quick Log, buckets/partial buckets, Target Completion 1-9, observer stats, export, and a prompt helper. The app includes a FastAPI backend, a Vite React frontend, Postgres wiring through SQLAlchemy, Alembic migrations, and Docker Compose.
 
-Deployment polish is not implemented yet.
+Deployment polish is documented in `docs/DEPLOYMENT.md`.
 
 ## Run With Docker
 
@@ -18,6 +18,8 @@ Then open:
 - Health: `http://localhost:8000/api/health`
 
 The production container applies Alembic migrations and serves the built React frontend from FastAPI.
+
+For the server/Cloudflare handoff, copy `.env.production.example` to `.env` on the server and follow `docs/DEPLOYMENT.md`.
 
 ## Local Backend
 
@@ -98,4 +100,4 @@ Included:
 
 Not included yet:
 
-- Deployment automation and production server/Cloudflare-specific polish
+- Automated server provisioning

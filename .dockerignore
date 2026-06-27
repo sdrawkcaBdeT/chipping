@@ -1,5 +1,7 @@
 .git
 .env
+.env.local
+.env.production
 .venv
 __pycache__
 .pytest_cache
