@@ -49,6 +49,16 @@ Expected harmless build warning:
 current commit information was not captured by the build ... git was not found
 ```
 
+## Deploy Script
+
+The local deploy script mirrors the BID workflow:
+
+```bash
+./deploy.sh
+```
+
+It runs from the local machine, updates the NAS-mounted repo at `/z/chipping` from GitHub `main`, copies the tracked `docker-compose.yml` to `docker-compose.yaml` for the UGREEN Docker project, then SSHes into the NAS to rebuild/start the Compose stack.
+
 ## Build And Start With CLI
 
 If managing the stack over SSH instead of the UGREEN Docker UI, run from the repository root on the server:
