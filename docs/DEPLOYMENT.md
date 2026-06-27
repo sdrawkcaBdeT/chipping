@@ -1,6 +1,6 @@
 # Deployment Notes
 
-This app is intended to be built and run on the server with Docker Compose, with Cloudflare Tunnel routing `chip.cashbaggins.dev` to the local app port.
+This app is intended to be built and run on the server with Docker Compose, with the `cloudflared` container routing `chip.cashbaggins.dev` to the app container over the private Compose network.
 
 ## Server Environment
 
@@ -11,17 +11,11 @@ Required values:
 - `POSTGRES_PASSWORD`
 - `OWNER_PIN` or `OWNER_PASSWORD`
 - `JWT_SECRET`
+- `CF_TUNNEL_TOKEN`
 - `CORS_ORIGINS=https://chip.cashbaggins.dev`
 - `COOKIE_SECURE=true`
 
-Recommended port bindings for a same-host Cloudflare Tunnel:
-
-```env
-APP_PORT=127.0.0.1:8000
-POSTGRES_PORT=127.0.0.1:5432
-```
-
-These keep the app and database off public interfaces while still allowing the tunnel process on the host to reach the app.
+The Compose stack does not publish the app or Postgres to host ports. Cloudflare reaches the app at `http://app:8000` from the `cloudflared` container.
 
 ## Build And Start
 
@@ -31,6 +25,7 @@ From the repository root on the server:
 docker compose up -d --build
 docker compose ps
 docker compose logs -f app
+docker compose logs -f cloudflared
 ```
 
 The app container runs Alembic migrations before starting FastAPI.
@@ -38,7 +33,7 @@ The app container runs Alembic migrations before starting FastAPI.
 Health check:
 
 ```bash
-curl http://127.0.0.1:8000/api/health
+docker compose exec app python -c "import urllib.request; print(urllib.request.urlopen('http://127.0.0.1:8000/api/health').read().decode())"
 ```
 
 Expected response:
@@ -52,7 +47,7 @@ Expected response:
 Configure the public hostname:
 
 - Hostname: `chip.cashbaggins.dev`
-- Service: `http://127.0.0.1:8000`
+- Service: `http://app:8000`
 
 The app itself does not need to know about the tunnel beyond:
 
@@ -60,6 +55,8 @@ The app itself does not need to know about the tunnel beyond:
 CORS_ORIGINS=https://chip.cashbaggins.dev
 COOKIE_SECURE=true
 ```
+
+When Cloudflare asks for the connector environment, choose **Docker**. Copy the tunnel token from the Docker command Cloudflare shows and put only the token value in `.env` as `CF_TUNNEL_TOKEN`.
 
 ## Backups
 

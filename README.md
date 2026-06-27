@@ -9,15 +9,15 @@ Deployment polish is documented in `docs/DEPLOYMENT.md`.
 ## Run With Docker
 
 ```powershell
-docker compose up --build
+docker compose --env-file .env up -d --build
 ```
 
 Then open:
 
-- App: `http://localhost:8000`
-- Health: `http://localhost:8000/api/health`
+- App: `https://chip.cashbaggins.dev` after Cloudflare Tunnel is connected
+- Health: `/api/health`
 
-The production container applies Alembic migrations and serves the built React frontend from FastAPI.
+The production container applies Alembic migrations and serves the built React frontend from FastAPI. The Compose stack includes a `cloudflared` container and does not publish app or database ports to the host.
 
 For the server/Cloudflare handoff, copy `.env.production.example` to `.env` on the server and follow `docs/DEPLOYMENT.md`.
 
