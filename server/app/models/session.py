@@ -35,7 +35,7 @@ class PracticeSession(Base):
     app_build_version: Mapped[str | None] = mapped_column(String(128), nullable=True)
     design_version: Mapped[str] = mapped_column(
         String(64),
-        default="v1-dashboard-polish",
+        default="v3-app-era-timeline",
         nullable=False,
     )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)

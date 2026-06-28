@@ -20,6 +20,7 @@ Implemented and deployed:
 - Docker Compose deployment with Postgres and Cloudflare Tunnel.
 - Build/session provenance fields and session-level code links.
 - Real target-net dashboard visual with range filters and last-run mode.
+- App-era badges, visual era snapshots, and a compact App Evolution timeline.
 
 ## Immediate Next Work
 
@@ -118,17 +119,19 @@ Potential views:
 
 ### App Era Timeline
 
-The app now records build/session provenance, but it does not yet replay the full historical UI.
+The first lightweight version is implemented. The app records build/session provenance and now exposes it as quiet product-history metadata.
 
-Next lightweight version:
+Implemented:
 
 - Define named app eras.
 - Show which era each session belongs to.
 - Link sessions to the code SHA recorded when they were created.
 - Add a small public timeline of meaningful app improvements.
+- Show small visual snapshots for each era.
 
-Later, only if worth it:
+Future refinements:
 
+- Replace representative UI snapshots with captured bitmap screenshots if the difference matters.
 - Historical UI replay or versioned presentation components.
 
 ### Portfolio Presentation

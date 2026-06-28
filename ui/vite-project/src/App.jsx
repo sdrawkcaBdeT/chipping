@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 
+import { APP_ERAS, codeUrlForSha, resolveAppEra } from "./data/appEras";
 import chippingNetTargetsLayout from "./data/chippingNetTargetsLayout.json";
 import "./styles.css";
 
@@ -58,14 +59,6 @@ function formatMaybeNumber(value) {
   }
 
   return formatNumber(value);
-}
-
-function shortSha(value) {
-  if (!value) {
-    return "";
-  }
-
-  return value.slice(0, 7);
 }
 
 function formatPercent(value) {
@@ -219,6 +212,131 @@ function compactMetric(value) {
   }
 
   return formatNumber(value);
+}
+
+function codeSnapshotUrl(era, source = {}) {
+  const sourceEra = resolveAppEra(source);
+  if (sourceEra.id === era.id && source.app_git_sha) {
+    return codeUrlForSha(source.app_git_sha);
+  }
+
+  return era.codeUrl;
+}
+
+function EraBadge({ era }) {
+  return <span className={`eraBadge eraBadge-${era.id}`}>{era.title} era</span>;
+}
+
+function EraSnapshot({ era }) {
+  return (
+    <div
+      className={`eraSnapshot eraSnapshot-${era.snapshotKind}`}
+      role="img"
+      aria-label={`${era.title} visual snapshot`}
+    >
+      <div className="snapshotTopbar">
+        <span />
+        <span />
+        <span />
+      </div>
+      {era.snapshotKind === "first-live" ? (
+        <div className="snapshotFirstLive">
+          <div>
+            <small>Observer Mode</small>
+            <strong>Chip Tracker</strong>
+          </div>
+          <div className="snapshotStatGrid">
+            <span />
+            <span />
+            <span />
+            <span />
+          </div>
+          <div className="snapshotList">
+            <span />
+            <span />
+            <span />
+          </div>
+        </div>
+      ) : null}
+      {era.snapshotKind === "polish-fonts" ? (
+        <div className="snapshotPolish">
+          <strong>2,142</strong>
+          <span>balls tracked</span>
+          <div className="snapshotScoreGrid">
+            <span />
+            <span />
+            <span />
+            <span />
+          </div>
+        </div>
+      ) : null}
+      {era.snapshotKind === "net-map" ? (
+        <div className="snapshotNet">
+          <div className="snapshotNetOval">
+            {[1, 3, 8, 5, 9, 6, 7, 4, 2].map((target) => (
+              <span className={`snapshotTarget snapshotTarget-${target}`} key={target}>
+                {target}
+              </span>
+            ))}
+          </div>
+        </div>
+      ) : null}
+      {era.snapshotKind === "era-timeline" ? (
+        <div className="snapshotEra">
+          <div>
+            <strong>App Evolution</strong>
+            <span />
+          </div>
+          <ol>
+            <li />
+            <li />
+            <li />
+          </ol>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function AppEvolutionTimeline({ build }) {
+  return (
+    <section className="appEvolutionPanel" id="evolution">
+      <div className="panelHeader">
+        <div>
+          <p className="eyebrow">App Evolution</p>
+          <h2>Product memory</h2>
+        </div>
+        <span>visual provenance</span>
+      </div>
+      <p className="evolutionIntro">
+        Sessions keep a small record of the product era that created them, so the practice
+        history can show both training progress and app progress.
+      </p>
+      <ol className="eraTimeline">
+        {APP_ERAS.map((era) => {
+          const codeUrl = codeSnapshotUrl(era, build);
+          return (
+            <li className="eraTimelineItem" key={era.id}>
+              <EraSnapshot era={era} />
+              <div className="eraTimelineCopy">
+                <div>
+                  <span>{era.dateLabel}</span>
+                  <strong>{era.title}</strong>
+                </div>
+                <p>{era.summary}</p>
+                <small>{era.visibleFeature}</small>
+                {codeUrl ? (
+                  <a href={codeUrl} rel="noreferrer" target="_blank">
+                    View code snapshot
+                  </a>
+                ) : null}
+              </div>
+            </li>
+          );
+        })}
+      </ol>
+    </section>
+  );
 }
 
 function SegmentedControl({ label, options, value, onChange }) {
@@ -415,6 +533,8 @@ function TargetNetMap({ mode = "performance", rangeLabel, run, targets = [] }) {
 }
 
 function SessionCard({ session }) {
+  const era = resolveAppEra(session);
+
   return (
     <a className="sessionCardLink" href={`/sessions/${session.id}`}>
       <span>
@@ -422,6 +542,7 @@ function SessionCard({ session }) {
         <small>
           {formatNumber(session.ball_count)} balls / {formatDurationSeconds(session.duration_seconds)}
         </small>
+        <EraBadge era={era} />
       </span>
       <SessionStatusPill status={session.status} />
     </a>
@@ -497,11 +618,9 @@ function ObserverDashboard() {
         <div className="siteNav">
           <a href="#sessions">Sessions</a>
           <a href="#targets">Targets</a>
-          {build?.code_url ? (
-            <a className="buildLink" href={build.code_url} rel="noreferrer" target="_blank">
-              Build {shortSha(build.app_git_sha)}
-            </a>
-          ) : null}
+          <a className="buildLink" href="#evolution">
+            Evolution
+          </a>
           <a className="primaryAction" href="/me/login">
             Log Practice
           </a>
@@ -668,6 +787,8 @@ function ObserverDashboard() {
             </div>
             {recentSessions.length ? null : <EmptyState>No sessions yet.</EmptyState>}
           </section>
+
+          <AppEvolutionTimeline build={build} />
         </>
       ) : null}
     </main>
@@ -713,6 +834,8 @@ function SessionDetail() {
   const buckets = detail?.buckets || [];
   const games = detail?.games || [];
   const sourceTotals = Object.entries(detail?.source_totals || {});
+  const sessionEra = resolveAppEra(detail?.provenance || {});
+  const sessionCodeUrl = codeSnapshotUrl(sessionEra, detail?.provenance || {});
 
   return (
     <main className="shell dashboardShell">
@@ -833,32 +956,30 @@ function SessionDetail() {
             <article className="dataPanel provenancePanel">
               <div className="panelHeader">
                 <div>
-                  <p className="eyebrow">System</p>
-                  <h2>Recorded with</h2>
+                  <p className="eyebrow">Created during</p>
+                  <h2>{sessionEra.title}</h2>
                 </div>
-                <span>{detail.provenance.design_version}</span>
+                <span>{sessionEra.shortLabel}</span>
               </div>
+              <EraSnapshot era={sessionEra} />
+              <p className="provenanceSummary">{sessionEra.summary}</p>
               <div className="provenanceReadout">
                 <div>
-                  <span>App commit</span>
-                  <strong>
-                    {detail.provenance.app_git_sha
-                      ? shortSha(detail.provenance.app_git_sha)
-                      : "not captured yet"}
-                  </strong>
-                  {detail.provenance.code_url ? (
-                    <a href={detail.provenance.code_url} rel="noreferrer" target="_blank">
-                      View code at time of session
+                  <span>App era</span>
+                  <strong>{sessionEra.title}</strong>
+                  {sessionCodeUrl ? (
+                    <a href={sessionCodeUrl} rel="noreferrer" target="_blank">
+                      View code snapshot
                     </a>
                   ) : null}
                 </div>
                 <div>
-                  <span>Presentation era</span>
-                  <strong>{detail.provenance.design_version}</strong>
+                  <span>Visible feature</span>
+                  <strong>{sessionEra.visibleFeature}</strong>
                 </div>
                 <div>
-                  <span>Build version</span>
-                  <strong>{detail.provenance.app_build_version || "not captured yet"}</strong>
+                  <span>Code trail</span>
+                  <strong>{sessionCodeUrl ? "Snapshot available" : "not captured yet"}</strong>
                 </div>
               </div>
             </article>

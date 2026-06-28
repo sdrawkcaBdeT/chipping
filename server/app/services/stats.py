@@ -200,6 +200,8 @@ def build_summary(data: dict[str, list[Any]], stats_range: StatsRange = "all") -
             "game_count": len(games_by_session[session.id]),
             "default_club": session.default_club,
             "default_distance_ft": session.default_distance_ft,
+            "app_git_sha": session.app_git_sha,
+            "app_build_version": session.app_build_version,
             "design_version": session.design_version,
         }
         for session in sessions

@@ -169,7 +169,7 @@ def test_public_session_detail_returns_session_games_and_buckets(session_client)
     assert detail["games"][0]["score"] == 10
     assert detail["games"][0]["completed_target_count"] == 9
     assert detail["games"][0]["targets"][0]["attempts"] == 2
-    assert detail["provenance"]["design_version"] == "v1-dashboard-polish"
+    assert detail["provenance"]["design_version"] == "v3-app-era-timeline"
     assert detail["provenance"]["app_git_sha"] is None
     assert detail["provenance"]["app_build_version"] is None
     assert detail["provenance"]["code_url"] is None

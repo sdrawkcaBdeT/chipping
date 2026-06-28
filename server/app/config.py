@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     static_dir: str | None = None
     app_git_sha: str | None = None
     app_build_version: str | None = None
-    design_version: str = "v1-dashboard-polish"
+    design_version: str = "v3-app-era-timeline"
     owner_pin: str | None = None
     owner_password: str | None = None
     jwt_secret: str | None = None

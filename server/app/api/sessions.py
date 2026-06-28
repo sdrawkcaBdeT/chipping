@@ -118,7 +118,7 @@ async def start_session(
         notes=payload.notes,
         app_git_sha=_clean_optional_value(settings.app_git_sha),
         app_build_version=_clean_optional_value(settings.app_build_version),
-        design_version=_clean_optional_value(settings.design_version) or "v1-dashboard-polish",
+        design_version=_clean_optional_value(settings.design_version) or "v3-app-era-timeline",
     )
     db.add(practice_session)
     await db.commit()

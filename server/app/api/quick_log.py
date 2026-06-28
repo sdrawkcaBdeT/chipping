@@ -77,7 +77,7 @@ def _session_provenance() -> dict[str, str | None]:
         "app_git_sha": _clean_optional_value(settings.app_git_sha),
         "app_build_version": _clean_optional_value(settings.app_build_version),
         "design_version": _clean_optional_value(settings.design_version)
-        or "v1-dashboard-polish",
+        or "v3-app-era-timeline",
     }
 
 

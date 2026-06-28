@@ -95,6 +95,7 @@ Included:
 - Miss, hit, undo, retrieve/end bucket, and stop game controls
 - Target Completion can span multiple buckets without ending the session
 - Public read-only observer stats
+- App Evolution timeline and session-era provenance
 - Owner CSV and JSON export
 - Owner prompt helper
 - Docker Compose with Postgres, app, and Cloudflare Tunnel containers

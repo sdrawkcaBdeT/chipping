@@ -26,7 +26,7 @@ async def public_build() -> dict:
     return {
         "app_git_sha": app_git_sha,
         "app_build_version": _clean_optional_value(settings.app_build_version),
-        "design_version": _clean_optional_value(settings.design_version) or "v1-dashboard-polish",
+        "design_version": _clean_optional_value(settings.design_version) or "v3-app-era-timeline",
         "code_url": (
             f"https://github.com/sdrawkcaBdeT/chipping/tree/{app_git_sha}"
             if app_git_sha

@@ -58,6 +58,13 @@ Production hostname:
    - Production `.env` template documents required secrets
    - Deployment notes cover UGREEN NAS and Cloudflare setup
 
+8. App provenance and era presentation
+   - Sessions store app SHA, build version, and design version
+   - Existing first-live sessions are backfilled to the first live commit
+   - Public dashboard includes a compact App Evolution timeline
+   - Session cards show subtle era badges
+   - Session detail shows the app era, visual snapshot, and code snapshot link
+
 ## Current Acceptance Snapshot
 
 - Observer Mode loads by default at `/`.
@@ -69,6 +76,7 @@ Production hostname:
 - Owner can run Target Completion across retrievals.
 - Observer stats update after practice is logged.
 - Owner export and prompt helper are protected.
+- Sessions carry visible app-era provenance.
 - The app runs on the NAS through Docker Compose with Postgres and Cloudflare Tunnel.
 
 ## Remaining Work

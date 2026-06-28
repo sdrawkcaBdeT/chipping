@@ -17,7 +17,7 @@ fi
 
 APP_GIT_SHA="$(git rev-parse HEAD)"
 APP_BUILD_VERSION="$(git rev-parse --short HEAD)"
-DESIGN_VERSION="v1-dashboard-polish"
+DESIGN_VERSION="v3-app-era-timeline"
 
 upsert_env() {
   local key="$1"

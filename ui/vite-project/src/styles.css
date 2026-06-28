@@ -1045,7 +1045,8 @@ button:disabled {
 }
 
 .dataPanel,
-.sessionShowcase {
+.sessionShowcase,
+.appEvolutionPanel {
   display: grid;
   gap: 16px;
   padding: 20px;
@@ -1411,6 +1412,356 @@ button:disabled {
   font-size: 0.9rem;
 }
 
+.eraBadge {
+  display: inline-flex;
+  width: fit-content;
+  min-height: 24px;
+  align-items: center;
+  border: 1px solid rgba(49, 80, 91, 0.16);
+  border-radius: 999px;
+  padding: 0 8px;
+  background: rgba(49, 80, 91, 0.08);
+  color: var(--steel);
+  font-family: var(--font-display);
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.eraBadge-first-live-tracker {
+  background: rgba(214, 178, 70, 0.15);
+  color: #6f5414;
+}
+
+.eraBadge-polish-fonts {
+  background: rgba(49, 80, 91, 0.1);
+  color: var(--steel);
+}
+
+.eraBadge-net-map-analytics {
+  background: rgba(103, 139, 82, 0.16);
+  color: #365f38;
+}
+
+.eraBadge-app-era-timeline {
+  background: rgba(19, 63, 53, 0.12);
+  color: var(--pine);
+}
+
+.appEvolutionPanel {
+  margin-top: 18px;
+}
+
+.evolutionIntro,
+.provenanceSummary {
+  max-width: 720px;
+  margin: 0;
+  color: var(--muted-ink);
+}
+
+.eraTimeline {
+  display: grid;
+  gap: 12px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.eraTimelineItem {
+  display: grid;
+  gap: 12px;
+  align-items: stretch;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+  background: #f8f7ef;
+}
+
+.eraTimelineCopy {
+  display: grid;
+  gap: 8px;
+  align-content: center;
+}
+
+.eraTimelineCopy div {
+  display: grid;
+  gap: 3px;
+}
+
+.eraTimelineCopy span,
+.eraTimelineCopy small {
+  color: var(--muted-ink);
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.eraTimelineCopy strong {
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.eraTimelineCopy p {
+  margin: 0;
+  color: #354439;
+}
+
+.eraTimelineCopy a {
+  width: fit-content;
+  color: var(--pine);
+  font-weight: 800;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+
+.eraSnapshot {
+  position: relative;
+  min-height: 190px;
+  overflow: hidden;
+  border: 1px solid rgba(21, 26, 23, 0.14);
+  border-radius: 8px;
+  background: #fffefa;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.52);
+}
+
+.snapshotTopbar {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  left: 12px;
+  z-index: 2;
+  display: flex;
+  gap: 5px;
+}
+
+.snapshotTopbar span {
+  display: block;
+  width: 7px;
+  aspect-ratio: 1;
+  border-radius: 999px;
+  background: rgba(21, 26, 23, 0.22);
+}
+
+.snapshotFirstLive,
+.snapshotPolish,
+.snapshotNet,
+.snapshotEra {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  padding: 34px 18px 18px;
+}
+
+.snapshotFirstLive {
+  gap: 12px;
+  background:
+    linear-gradient(135deg, rgba(103, 139, 82, 0.14), transparent 58%),
+    #f3f1e8;
+}
+
+.snapshotFirstLive div:first-child {
+  display: grid;
+  gap: 4px;
+}
+
+.snapshotFirstLive small,
+.snapshotPolish span {
+  color: var(--muted-ink);
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.snapshotFirstLive strong {
+  color: #172018;
+  font-family: var(--font-display);
+  font-size: 1.7rem;
+  line-height: 0.95;
+  text-transform: uppercase;
+}
+
+.snapshotStatGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.snapshotStatGrid span,
+.snapshotScoreGrid span {
+  min-height: 38px;
+  border: 1px solid rgba(23, 63, 53, 0.12);
+  border-radius: 6px;
+  background: #ffffff;
+}
+
+.snapshotList {
+  display: grid;
+  gap: 6px;
+}
+
+.snapshotList span {
+  min-height: 18px;
+  border-radius: 4px;
+  background: rgba(23, 63, 53, 0.1);
+}
+
+.snapshotPolish {
+  align-content: end;
+  gap: 8px;
+  background:
+    linear-gradient(135deg, rgba(19, 63, 53, 0.08), transparent 46%),
+    #fffefa;
+}
+
+.snapshotPolish strong {
+  font-family: var(--font-display);
+  font-size: 4.6rem;
+  line-height: 0.78;
+  text-transform: uppercase;
+}
+
+.snapshotScoreGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.snapshotNet {
+  place-items: center;
+  background: #f8f7ef;
+}
+
+.snapshotNetOval {
+  position: relative;
+  width: min(88%, 270px);
+  aspect-ratio: 1.2;
+  border: 8px solid #292c2b;
+  border-radius: 50%;
+  background:
+    repeating-linear-gradient(
+      104deg,
+      transparent 0,
+      transparent 12px,
+      rgba(111, 98, 73, 0.42) 13px,
+      transparent 15px
+    ),
+    #111312;
+}
+
+.snapshotTarget {
+  position: absolute;
+  display: grid;
+  width: 28px;
+  aspect-ratio: 1;
+  place-items: center;
+  border: 4px solid var(--target-color, var(--signal));
+  border-radius: 999px;
+  background: #e8decb;
+  color: #172018;
+  font-family: var(--font-display);
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.snapshotTarget-1 {
+  --target-color: #f3d21b;
+  top: 8%;
+  left: 44%;
+}
+
+.snapshotTarget-2 {
+  --target-color: #2467c8;
+  right: 43%;
+  bottom: 8%;
+}
+
+.snapshotTarget-3 {
+  --target-color: #df3730;
+  top: 24%;
+  left: 20%;
+}
+
+.snapshotTarget-4 {
+  --target-color: #663057;
+  right: 22%;
+  bottom: 22%;
+}
+
+.snapshotTarget-5 {
+  --target-color: #ff7a00;
+  top: 45%;
+  left: 11%;
+}
+
+.snapshotTarget-6 {
+  --target-color: #27b95b;
+  top: 45%;
+  right: 11%;
+}
+
+.snapshotTarget-7 {
+  --target-color: #7d1f24;
+  bottom: 22%;
+  left: 22%;
+}
+
+.snapshotTarget-8 {
+  --target-color: #bdb8aa;
+  top: 24%;
+  right: 20%;
+}
+
+.snapshotTarget-9 {
+  --target-color: #ffffff;
+  top: 43%;
+  left: 44%;
+  width: 38px;
+}
+
+.snapshotEra {
+  align-content: center;
+  gap: 14px;
+  background:
+    linear-gradient(180deg, rgba(214, 178, 70, 0.11), transparent 70%),
+    #fffefa;
+}
+
+.snapshotEra div {
+  display: grid;
+  gap: 8px;
+}
+
+.snapshotEra strong {
+  font-family: var(--font-display);
+  font-size: 1.8rem;
+  line-height: 0.94;
+  text-transform: uppercase;
+}
+
+.snapshotEra div span {
+  width: 62%;
+  height: 12px;
+  border-radius: 999px;
+  background: rgba(49, 80, 91, 0.14);
+}
+
+.snapshotEra ol {
+  display: grid;
+  gap: 8px;
+  padding: 0;
+  margin: 0;
+}
+
+.snapshotEra li {
+  min-height: 24px;
+  border-radius: 6px;
+  background: rgba(19, 63, 53, 0.1);
+  list-style: none;
+}
+
 .bucketTimeline {
   display: grid;
   gap: 8px;
@@ -1593,6 +1944,10 @@ button:disabled {
 
   .sessionCardGrid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .eraTimelineItem {
+    grid-template-columns: minmax(220px, 0.46fr) minmax(0, 1fr);
   }
 
   .sessionDetailGrid {
