@@ -17,7 +17,7 @@ fi
 
 APP_GIT_SHA="$(git rev-parse HEAD)"
 APP_BUILD_VERSION="$(git rev-parse --short HEAD)"
-DESIGN_VERSION="v3-app-era-timeline"
+DESIGN_VERSION="v4-practice-net-map"
 
 upsert_env() {
   local key="$1"

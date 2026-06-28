@@ -64,7 +64,7 @@ The script also writes the current deploy commit into the NAS `.env`:
 ```env
 APP_GIT_SHA=<full commit sha>
 APP_BUILD_VERSION=<short commit sha>
-DESIGN_VERSION=v3-app-era-timeline
+DESIGN_VERSION=v4-practice-net-map
 ```
 
 New practice sessions snapshot those values so public session detail pages can link to the code that was live when the session was recorded.

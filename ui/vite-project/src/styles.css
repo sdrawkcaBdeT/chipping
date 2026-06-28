@@ -1304,12 +1304,48 @@ button:disabled {
   stroke-width: 1.85;
 }
 
+.netTargetGroup.current .netTargetRing {
+  stroke: var(--signal);
+  stroke-width: 2.35;
+}
+
+.netTargetGroup.current .netTargetValue {
+  fill: var(--pine);
+  font-size: 3.5px;
+}
+
+.netTargetGroup.current .netTargetShadow {
+  opacity: 0.86;
+}
+
+.netTargetGroup.completed .netTargetRing {
+  stroke: var(--moss);
+}
+
+.netTargetGroup.completed .netTargetValue {
+  fill: #1d6041;
+}
+
+.netTargetGroup.attempted:not(.current) .netTargetRing {
+  stroke-width: 1.85;
+}
+
 .netTargetGroup.lowSample .netTarget {
   opacity: 0.72;
 }
 
-.netTargetGroup.noData .netTarget {
+.netTargetGroup.noData .netTarget,
+.netTargetGroup:not(.current):not(.completed):not(.attempted).noData .netTarget {
   opacity: 0.58;
+}
+
+.compactNetMap {
+  width: min(100%, 460px);
+  justify-self: center;
+}
+
+.compactNetMap .netMapReadout {
+  font-size: 0.72rem;
 }
 
 .netMapReadout {
@@ -1372,6 +1408,14 @@ button:disabled {
   color: var(--muted-ink);
   font-size: 0.82rem;
   font-weight: 800;
+}
+
+.targetOrderStrip {
+  grid-template-columns: repeat(9, minmax(0, 1fr));
+}
+
+.targetOrderStrip li {
+  min-height: 44px;
 }
 
 .sessionShowcase {
@@ -1547,6 +1591,7 @@ button:disabled {
 .snapshotFirstLive,
 .snapshotPolish,
 .snapshotNet,
+.snapshotPracticeNet,
 .snapshotEra {
   position: absolute;
   inset: 0;
@@ -1634,6 +1679,37 @@ button:disabled {
   background: #f8f7ef;
 }
 
+.snapshotPracticeNet {
+  align-content: center;
+  justify-items: center;
+  gap: 10px;
+  background:
+    linear-gradient(180deg, rgba(103, 139, 82, 0.13), transparent 70%),
+    #f8f7ef;
+}
+
+.snapshotPracticeHeader {
+  display: flex;
+  width: min(88%, 270px);
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.snapshotPracticeHeader strong {
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.snapshotPracticeHeader span {
+  color: var(--muted-ink);
+  font-size: 0.74rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
 .snapshotNetOval {
   position: relative;
   width: min(88%, 270px);
@@ -1664,6 +1740,16 @@ button:disabled {
   font-family: var(--font-display);
   font-size: 0.78rem;
   font-weight: 900;
+}
+
+.snapshotTarget.complete {
+  border-color: var(--moss);
+  color: #1d6041;
+}
+
+.snapshotTarget.current {
+  border-color: var(--signal);
+  box-shadow: 0 0 0 5px rgba(214, 178, 70, 0.22);
 }
 
 .snapshotTarget-1 {

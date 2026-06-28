@@ -21,6 +21,7 @@ Implemented and deployed:
 - Build/session provenance fields and session-level code links.
 - Real target-net dashboard visual with range filters and last-run mode.
 - App-era badges, visual era snapshots, and a compact App Evolution timeline.
+- Target-net visual reused in active Target Completion and session detail recaps.
 
 ## Immediate Next Work
 
@@ -39,20 +40,19 @@ This is not a code milestone by itself. It is a calibration pass before the next
 
 ### 2. Reuse The Net Map In Practice Views
 
-The public dashboard now has the best target visual. The owner workflow and session detail should use the same visual language.
+Implemented. The owner workflow and session detail now use the same physical net visual language as the public dashboard.
 
-Targets:
+Implemented:
 
 - Add a session-level net map to session detail.
 - Replace or augment the active Me Mode Target Completion target grid with a compact net map.
 - Highlight current target, completed targets, and per-target attempts.
 - Keep Me Mode fast and clear; the visual should support logging, not slow it down.
 
-Recommended scope:
+Future refinements:
 
-- Reuse the existing frontend layout data.
-- Avoid new backend tables.
-- Use existing session/game payloads where possible.
+- Tune size/readability after several real Target Completion runs.
+- Decide whether active Me Mode should keep both the net map and ordered strip long-term.
 
 ### 3. Session Detail Polish
 
@@ -259,9 +259,8 @@ Future improvements:
 ## Suggested Next Milestones
 
 1. Record a few real Target Completion runs.
-2. Reuse the net map in Me Mode and session detail.
-3. Polish session detail with real data.
-4. Add target trend mode.
-5. Rehearse backup and restore.
-6. Add owner settings.
-7. Schedule CV foundation when the manual workflow and analytics feel stable.
+2. Polish session detail with real data.
+3. Add target trend mode.
+4. Rehearse backup and restore.
+5. Add owner settings.
+6. Schedule CV foundation when the manual workflow and analytics feel stable.

@@ -202,6 +202,35 @@ function runTargetClass(target) {
   return classes.join(" ");
 }
 
+function gameTargetClass(target, currentTargetNumber) {
+  if (!target) {
+    return "noData";
+  }
+
+  const classes = [];
+  if (target.hit) {
+    classes.push("completed");
+  }
+
+  if (currentTargetNumber === target.target_number) {
+    classes.push("current");
+  }
+
+  if (target.attempts >= 3) {
+    classes.push("hard");
+  }
+
+  if (target.hit && target.attempts <= 1) {
+    classes.push("sharp");
+  }
+
+  if (!target.hit && target.attempts > 0) {
+    classes.push("attempted");
+  }
+
+  return classes.join(" ");
+}
+
 function targetByNumber(targets) {
   return new Map(targets.map((target) => [target.target_number, target]));
 }
@@ -275,6 +304,31 @@ function EraSnapshot({ era }) {
           <div className="snapshotNetOval">
             {[1, 3, 8, 5, 9, 6, 7, 4, 2].map((target) => (
               <span className={`snapshotTarget snapshotTarget-${target}`} key={target}>
+                {target}
+              </span>
+            ))}
+          </div>
+        </div>
+      ) : null}
+      {era.snapshotKind === "practice-net" ? (
+        <div className="snapshotPracticeNet">
+          <div className="snapshotPracticeHeader">
+            <strong>Target 5</strong>
+            <span>3/9 complete</span>
+          </div>
+          <div className="snapshotNetOval">
+            {[1, 3, 8, 5, 9, 6, 7, 4, 2].map((target) => (
+              <span
+                className={[
+                  "snapshotTarget",
+                  `snapshotTarget-${target}`,
+                  [1, 3, 8].includes(target) ? "complete" : "",
+                  target === 5 ? "current" : ""
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
+                key={target}
+              >
                 {target}
               </span>
             ))}
@@ -445,19 +499,38 @@ function CompletionTrend({ runs = [] }) {
   );
 }
 
-function TargetNetMap({ mode = "performance", rangeLabel, run, targets = [] }) {
+function TargetNetMap({
+  compact = false,
+  currentTargetNumber,
+  game,
+  mode = "performance",
+  rangeLabel,
+  run,
+  targets = []
+}) {
   const performanceTargets = targetByNumber(targets);
-  const runTargets = targetByNumber(run?.targets || []);
+  const gameData = game || run;
+  const gameTargets = targetByNumber(gameData?.targets || []);
   const isLastRun = mode === "last_run";
+  const isGame = mode === "game";
   const mapLabel = isLastRun
     ? run
       ? `${run.variant} run / ${formatMaybeNumber(run.score)} balls`
       : "No completed run"
+      : isGame
+        ? gameData
+          ? `${gameData.variant} 1-9 / ${formatMaybeNumber(gameData.score ?? gameData.total_balls_used)} balls`
+          : "No game data"
     : `${rangeLabel} / avg balls to hit`;
 
   return (
-    <div className="netMapWrap">
-      <svg className="netMap" role="img" aria-label={`Chipping net target map, ${mapLabel}`} viewBox="0 0 100 100">
+    <div className={`netMapWrap ${compact ? "compactNetMap" : ""}`}>
+      <svg
+        className="netMap"
+        role="img"
+        aria-label={`Chipping net target map, ${mapLabel}`}
+        viewBox="0 0 100 100"
+      >
         <defs>
           <pattern
             id="netMesh"
@@ -482,16 +555,26 @@ function TargetNetMap({ mode = "performance", rangeLabel, run, targets = [] }) {
             attempts: 0,
             hit_rate: null
           };
-          const runTarget = runTargets.get(layoutTarget.id);
-          const value = isLastRun ? runTarget?.attempts : target.average_balls_to_hit;
-          const subValue = isLastRun
-            ? runTarget?.hit
-              ? "hit"
-              : "open"
-            : target.attempts
-              ? `${target.attempts} att`
-              : "no reps";
-          const stateClass = isLastRun ? runTargetClass(runTarget) : targetDifficultyClass(target);
+          const gameTarget = gameTargets.get(layoutTarget.id);
+          const value = isGame || isLastRun ? gameTarget?.attempts : target.average_balls_to_hit;
+          const subValue =
+            isGame || isLastRun
+              ? currentTargetNumber === layoutTarget.id
+                ? "current"
+                : gameTarget?.hit
+                  ? "hit"
+                  : gameTarget?.attempts
+                    ? "open"
+                    : "next"
+              : target.attempts
+                ? `${target.attempts} att`
+                : "no reps";
+          const stateClass =
+            isGame
+              ? gameTargetClass(gameTarget, currentTargetNumber)
+              : isLastRun
+                ? runTargetClass(gameTarget)
+              : targetDifficultyClass(target);
           const numberX = layoutTarget.x + layoutTarget.num_dx * layoutTarget.r;
           const numberY = layoutTarget.y + layoutTarget.num_dy * layoutTarget.r;
 
@@ -503,8 +586,10 @@ function TargetNetMap({ mode = "performance", rangeLabel, run, targets = [] }) {
                 transform={`translate(${layoutTarget.x} ${layoutTarget.y})`}
               >
                 <title>
-                  {isLastRun
-                    ? `Target ${layoutTarget.id}: ${formatMaybeNumber(value)} balls in last run`
+                  {isGame
+                    ? `Target ${layoutTarget.id}: ${formatMaybeNumber(value)} balls in this game`
+                    : isLastRun
+                      ? `Target ${layoutTarget.id}: ${formatMaybeNumber(value)} balls in last run`
                     : `Target ${layoutTarget.id}: ${formatMaybeNumber(value)} average balls to hit`}
                 </title>
                 <circle className="netTargetShadow" r={layoutTarget.r + 1.4} />
@@ -526,7 +611,13 @@ function TargetNetMap({ mode = "performance", rangeLabel, run, targets = [] }) {
       </svg>
       <div className="netMapReadout">
         <span>{mapLabel}</span>
-        <span>{isLastRun ? "balls per target" : "dimmed targets need more reps"}</span>
+        <span>
+          {isGame
+            ? "current / completed / attempts"
+            : isLastRun
+              ? "balls per target"
+              : "dimmed targets need more reps"}
+        </span>
       </div>
     </div>
   );
@@ -937,7 +1028,8 @@ function SessionDetail() {
                         </div>
                         <span>{game.score} balls</span>
                       </div>
-                      <ol className="sessionTargetMap">
+                      <TargetNetMap compact game={game} mode="game" />
+                      <ol className="sessionTargetMap targetOrderStrip">
                         {game.targets.map((target) => (
                           <li className={target.hit ? "completed" : ""} key={target.target_number}>
                             <strong>{target.target_number}</strong>
@@ -1254,6 +1346,13 @@ function TargetCompletionPanel({
         <span style={{ width: `${Math.round((completedCount / 9) * 100)}%` }} />
       </div>
 
+      <TargetNetMap
+        compact
+        currentTargetNumber={currentTarget?.target_number}
+        game={activeGame}
+        mode="game"
+      />
+
       <div className="gameStats">
         <div>
           <span>Progress</span>
@@ -1277,7 +1376,7 @@ function TargetCompletionPanel({
         </div>
       </div>
 
-      <ol className="targetGrid" aria-label="Target order">
+      <ol className="targetGrid targetOrderStrip" aria-label="Target order">
         {activeGame.targets.map((target) => (
           <li
             className={[

@@ -1,4 +1,4 @@
-export const CURRENT_DESIGN_VERSION = "v3-app-era-timeline";
+export const CURRENT_DESIGN_VERSION = "v4-practice-net-map";
 
 export const APP_ERAS = [
   {
@@ -42,13 +42,25 @@ export const APP_ERAS = [
   },
   {
     id: "app-era-timeline",
-    designVersions: [CURRENT_DESIGN_VERSION],
+    designVersions: ["v3-app-era-timeline"],
     title: "App Era Timeline",
     dateLabel: "Jun 27, 2026",
     shortLabel: "Era Timeline",
     summary: "Sessions now carry a visible product-history trail.",
     visibleFeature: "Era badges, visual snapshots, session provenance, and code snapshots.",
     snapshotKind: "era-timeline",
+    primarySha: null,
+    codeUrl: null
+  },
+  {
+    id: "practice-net-map",
+    designVersions: [CURRENT_DESIGN_VERSION],
+    title: "Practice Net Map",
+    dateLabel: "Jun 27, 2026",
+    shortLabel: "Practice Map",
+    summary: "The physical target map moved into live practice and session review.",
+    visibleFeature: "Current target, completed targets, and attempts now render on the real net layout.",
+    snapshotKind: "practice-net",
     primarySha: null,
     codeUrl: null
   }

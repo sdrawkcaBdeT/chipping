@@ -65,6 +65,11 @@ Production hostname:
    - Session cards show subtle era badges
    - Session detail shows the app era, visual snapshot, and code snapshot link
 
+9. Practice net map reuse
+   - Active Target Completion uses the physical net map for current/completed/attempted targets
+   - Session detail game recaps use the same net map for per-target attempts
+   - Compact ordered target strips remain for sequential/random order clarity
+
 ## Current Acceptance Snapshot
 
 - Observer Mode loads by default at `/`.
@@ -77,6 +82,7 @@ Production hostname:
 - Observer stats update after practice is logged.
 - Owner export and prompt helper are protected.
 - Sessions carry visible app-era provenance.
+- Owner Target Completion and session review share the same target-net visual language.
 - The app runs on the NAS through Docker Compose with Postgres and Cloudflare Tunnel.
 
 ## Remaining Work
@@ -87,3 +93,4 @@ These are polish items, not blockers for V0:
 - Improve trend charts after enough Target Completion runs accumulate.
 - Add a tested backup/restore rehearsal against a disposable database.
 - Consider owner settings for default club and distance instead of fixed frontend defaults.
+- Schedule the CV event-ingestion foundation when ready; actual computer vision remains out of scope.
